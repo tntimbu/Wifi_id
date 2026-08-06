@@ -1,0 +1,110 @@
+{
+  "entities": {
+    "users": {
+      "title": "User Profile",
+      "description": "Stores user demographic data, role, and balance",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "nama": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "user"] },
+        "saldo": { "type": "number" },
+        "no_hp": { "type": "string" },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "nama", "role"]
+    },
+    "paket_kuota": {
+      "title": "Quota Package",
+      "description": "Available wifi hotspot quota packages",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "nama": { "type": "string" },
+        "harga": { "type": "number" },
+        "durasi_jam": { "type": "number" },
+        "batas_mb": { "type": "number" },
+        "kecepatan": { "type": "string" },
+        "aktif": { "type": "boolean" },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["nama", "harga", "durasi_jam", "batas_mb", "kecepatan", "aktif"]
+    },
+    "transaksi": {
+      "title": "Transaction",
+      "description": "User package purchases and status",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "user_id": { "type": "string" },
+        "user_email": { "type": "string" },
+        "paket_id": { "type": "string" },
+        "paket_nama": { "type": "string" },
+        "harga": { "type": "number" },
+        "batas_mb": { "type": "number" },
+        "durasi_jam": { "type": "number" },
+        "status": { "type": "string", "enum": ["aktif", "habis", "expired", "pending"] },
+        "waktu_mulai": { "type": "string", "format": "date-time" },
+        "waktu_berakhir": { "type": "string", "format": "date-time" },
+        "sisa_kuota_mb": { "type": "number" },
+        "total_pemakaian_mb": { "type": "number" },
+        "metode_pembayaran": { "type": "string" },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["user_id", "paket_nama", "harga", "status"]
+    },
+    "pemakaian": {
+      "title": "Usage Log",
+      "description": "Data usage logs per user",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "transaksi_id": { "type": "string" },
+        "user_id": { "type": "string" },
+        "pemakaian_mb": { "type": "number" },
+        "waktu": { "type": "string", "format": "date-time" },
+        "keterangan": { "type": "string" }
+      },
+      "required": ["transaksi_id", "user_id", "pemakaian_mb"]
+    },
+    "notifikasi": {
+      "title": "Notification",
+      "description": "User and admin notifications",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "user_id": { "type": "string" },
+        "judul": { "type": "string" },
+        "pesan": { "type": "string" },
+        "dibaca": { "type": "boolean" },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["user_id", "judul", "pesan", "dibaca"]
+    },
+    "konfigurasi_wifi": {
+      "title": "Wifi Configuration",
+      "description": "Captive portal settings and branding",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "nama_wifi": { "type": "string" },
+        "welcome_message": { "type": "string" },
+        "logo_url": { "type": "string" },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["nama_wifi", "welcome_message"]
+    },
+    "pemakaian_real_time": {
+      "title": "Realtime Usage",
+      "description": "Live state tracking for customer dashboard",
+      "type": "object",
+      "properties": {
+        "user_id": { "type": "string" },
+        "transaksi_aktif": { "type": "object" },
+        "last_update": { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}

@@ -1,0 +1,479 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged
+} from 'firebase/auth';
+import { auth, db } from './firebase';
+import {
+  initDefaultSeedData,
+  createUserProfile,
+  getUserProfile,
+  getWifiConfig,
+  getPaketAktif,
+  getAllPaket,
+  getAllUsers,
+  getTransaksiAktif,
+  getRiwayatTransaksi,
+  getNotifikasiUser,
+  beliPaket,
+  tambahPaket,
+  editPaket,
+  hapusPaket,
+  togglePaket,
+  konfirmasiPembayaran,
+  updateUserBalance,
+  updateWifiConfig,
+  cekBatasPerJam,
+  exportTransaksiCSV
+} from './services/wifiService';
+import {
+  UserProfile,
+  PaketKuota,
+  Transaksi,
+  KonfigurasiWifi,
+  NotifikasiItem,
+  PageView,
+  MetodePembayaran
+} from './types';
+
+import { Navbar } from './components/Navbar';
+import { ToastContainer, ToastMessage } from './components/Toast';
+import { LoginRegisterView } from './components/views/LoginRegisterView';
+import { LandingView } from './components/views/LandingView';
+import { CustomerDashboardView } from './components/views/CustomerDashboardView';
+import { MarketplaceView } from './components/views/MarketplaceView';
+import { HistoryView } from './components/views/HistoryView';
+import { ProfileView } from './components/views/ProfileView';
+import { TopUpView } from './components/views/TopUpView';
+import { AdminView } from './components/views/AdminPanel/AdminView';
+
+export default function App() {
+  // Page view navigation state
+  const [activePage, setActivePage] = useState<PageView>('landing');
+  
+  // App state
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+  const [authLoading, setAuthLoading] = useState<boolean>(true);
+  const [actionLoading, setActionLoading] = useState<boolean>(false);
+
+  // Data collections
+  const [wifiConfig, setWifiConfig] = useState<KonfigurasiWifi>({
+    id: 'wifi_config',
+    nama_wifi: 'Wifi-Kuota Premium',
+    welcome_message: 'Selamat datang di Wifi-Kuota Premium! Nikmati internet cepat dan stabil.'
+  });
+  const [activePackages, setActivePackages] = useState<PaketKuota[]>([]);
+  const [allPackages, setAllPackages] = useState<PaketKuota[]>([]);
+  const [activeTx, setActiveTx] = useState<Transaksi | null>(null);
+  const [recentTxList, setRecentTxList] = useState<Transaksi[]>([]);
+  const [allTxList, setAllTxList] = useState<Transaksi[]>([]);
+  const [allUserList, setAllUserList] = useState<UserProfile[]>([]);
+  const [notifications, setNotifications] = useState<NotifikasiItem[]>([]);
+
+  // Toast Alerts
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
+  const addToast = (type: 'success' | 'error' | 'info', message: string) => {
+    const id = Math.random().toString(36).substring(2, 9);
+    setToasts(prev => [...prev, { id, type, message }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 4500);
+  };
+
+  const removeToast = (id: string) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  };
+
+  // Hash route synchronizer (#page-login-register, #page-landing, etc.)
+  useEffect(() => {
+    const syncHash = () => {
+      const hash = window.location.hash.replace('#page-', '');
+      if (hash && ['login-register', 'landing', 'dashboard', 'marketplace', 'riwayat', 'profil', 'admin', 'topup'].includes(hash)) {
+        setActivePage(hash as PageView);
+      }
+    };
+    syncHash();
+    window.addEventListener('hashchange', syncHash);
+    return () => window.removeEventListener('hashchange', syncHash);
+  }, []);
+
+  const navigateTo = (page: PageView) => {
+    setActivePage(page);
+    window.location.hash = `#page-${page}`;
+  };
+
+  // Fetch / Refresh Data
+  const loadData = useCallback(async (uid?: string) => {
+    try {
+      // Load wifi config
+      const cfg = await getWifiConfig();
+      setWifiConfig(cfg);
+
+      // Load packages
+      const pkgs = await getPaketAktif();
+      setActivePackages(pkgs);
+
+      const allPkgs = await getAllPaket();
+      setAllPackages(allPkgs);
+
+      const targetUid = uid || currentUser?.uid;
+      if (targetUid) {
+        // Load fresh user profile
+        const profile = await getUserProfile(targetUid);
+        if (profile) setCurrentUser(profile);
+
+        // Load active transaction
+        const active = await getTransaksiAktif(targetUid);
+        setActiveTx(active);
+
+        // Load transaction history
+        const txs = await getRiwayatTransaksi(targetUid, 20);
+        setRecentTxList(txs);
+
+        // Load notifications
+        const notifs = await getNotifikasiUser(targetUid);
+        setNotifications(notifs);
+
+        // If admin, load all data
+        if (profile?.role === 'admin') {
+          const users = await getAllUsers();
+          setAllUserList(users);
+
+          const allTxs = await getRiwayatTransaksi(undefined, 100);
+          setAllTxList(allTxs);
+        }
+      }
+    } catch (err) {
+      console.error('Error loading app data:', err);
+    }
+  }, [currentUser?.uid]);
+
+  // Initial Auth & Data Initialization
+  useEffect(() => {
+    let unsubscribe: any = null;
+
+    const init = async () => {
+      // Seed default config & packages if db is empty
+      await initDefaultSeedData();
+
+      unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+        if (firebaseUser) {
+          let profile = await getUserProfile(firebaseUser.uid);
+          if (!profile) {
+            profile = await createUserProfile(
+              firebaseUser.uid,
+              firebaseUser.email || 'user@wifikota.com',
+              firebaseUser.displayName || 'Pelanggan Hotspot',
+              '081234567890'
+            );
+          }
+          setCurrentUser(profile);
+          await loadData(firebaseUser.uid);
+          
+          // Default redirect if currently on login
+          if (window.location.hash.includes('login-register') || !window.location.hash) {
+            navigateTo('dashboard');
+          }
+        } else {
+          setCurrentUser(null);
+          await loadData();
+        }
+        setAuthLoading(false);
+      });
+    };
+
+    init();
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, [loadData]);
+
+  // Auth Handlers
+  const handleLogin = async (email: string, pass: string): Promise<boolean> => {
+    setActionLoading(true);
+    try {
+      await signInWithEmailAndPassword(auth, email, pass);
+      addToast('success', 'Selamat datang kembali! Login berhasil.');
+      setActionLoading(false);
+      return true;
+    } catch (err: any) {
+      console.error('Login error:', err);
+      // Fallback: If demo login attempt fails because user doesn't exist yet, auto-create
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
+        try {
+          const cred = await createUserWithEmailAndPassword(auth, email, pass);
+          const isDbAdmin = email.toLowerCase() === 'admin@wifikota.com';
+          await createUserProfile(
+            cred.user.uid,
+            email,
+            isDbAdmin ? 'Administrator WiFi' : 'Pelanggan Demo',
+            '081234567890',
+            isDbAdmin ? 'admin' : 'user'
+          );
+          addToast('success', 'Akun demo berhasil dibuat & di-login!');
+          setActionLoading(false);
+          return true;
+        } catch (regErr: any) {
+          addToast('error', regErr.message || 'Login / registrasi gagal.');
+        }
+      } else {
+        addToast('error', 'Login gagal. Periksa email dan password.');
+      }
+      setActionLoading(false);
+      return false;
+    }
+  };
+
+  const handleRegister = async (email: string, pass: string, nama: string, noHp: string): Promise<boolean> => {
+    setActionLoading(true);
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email, pass);
+      await createUserProfile(cred.user.uid, email, nama, noHp, 'user');
+      addToast('success', 'Pendaftaran akun berhasil! Selamat datang.');
+      setActionLoading(false);
+      return true;
+    } catch (err: any) {
+      console.error('Register error:', err);
+      addToast('error', err.message || 'Pendaftaran gagal.');
+      setActionLoading(false);
+      return false;
+    }
+  };
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    setCurrentUser(null);
+    addToast('info', 'Anda telah keluar dari sistem.');
+    navigateTo('landing');
+  };
+
+  // Purchase Package Handler
+  const handleSelectPackage = async (paket: PaketKuota, metode: MetodePembayaran) => {
+    if (!currentUser) {
+      navigateTo('login-register');
+      return;
+    }
+
+    // Rate Limiting Check
+    const rateCheck = await cekBatasPerJam(currentUser.uid, paket.harga);
+    if (rateCheck.isExceeded) {
+      addToast('error', 'Peringatan: Batas akumulasi transaksi Anda melebihi Rp 50.000 / jam untuk keamanan.');
+      return;
+    }
+
+    setActionLoading(true);
+    const res = await beliPaket(currentUser, paket, metode);
+    setActionLoading(false);
+
+    if (res.success) {
+      addToast('success', res.message);
+      await loadData();
+      navigateTo('dashboard');
+    } else {
+      addToast('error', res.message);
+    }
+  };
+
+  // Admin Handlers
+  const handleAddPackage = async (pkg: Omit<PaketKuota, 'id'>) => {
+    await tambahPaket(pkg);
+    addToast('success', 'Paket baru berhasil ditambahkan!');
+    await loadData();
+  };
+
+  const handleEditPackage = async (id: string, data: Partial<PaketKuota>) => {
+    await editPaket(id, data);
+    addToast('success', 'Data paket berhasil diperbarui!');
+    await loadData();
+  };
+
+  const handleDeletePackage = async (id: string) => {
+    await hapusPaket(id);
+    addToast('success', 'Paket berhasil dihapus.');
+    await loadData();
+  };
+
+  const handleTogglePackage = async (id: string, currentStatus: boolean) => {
+    await togglePaket(id, currentStatus);
+    addToast('info', 'Status aktif paket berhasil diubah.');
+    await loadData();
+  };
+
+  const handleConfirmPayment = async (txId: string) => {
+    const success = await konfirmasiPembayaran(txId);
+    if (success) {
+      addToast('success', 'Pembayaran berhasil dikonfirmasi & paket diaktifkan!');
+      await loadData();
+    } else {
+      addToast('error', 'Gagal mengkonfirmasi pembayaran.');
+    }
+  };
+
+  const handleAddUserBalance = async (uid: string, delta: number) => {
+    await updateUserBalance(uid, delta);
+    addToast('success', `Berhasil menambahkan saldo Rp ${delta.toLocaleString('id-ID')}`);
+    await loadData();
+  };
+
+  const handleUpdateWifiConfig = async (data: Partial<KonfigurasiWifi>) => {
+    await updateWifiConfig(data);
+    addToast('success', 'Konfigurasi WiFi berhasil diperbarui!');
+    await loadData();
+  };
+
+  // Top Up Handler for Customer
+  const handleCustomerTopUp = async (amount: number) => {
+    if (!currentUser) return;
+    await updateUserBalance(currentUser.uid, amount);
+    addToast('success', `Saldo Rp ${amount.toLocaleString('id-ID')} berhasil masuk ke akun Anda!`);
+    await loadData();
+  };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">
+        <div className="text-center space-y-3">
+          <div className="w-10 h-10 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto" />
+          <p className="text-xs text-slate-400 font-semibold">Memuat Aplikasi WiFi-Kuota...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-blue-500 selection:text-white">
+      
+      {/* Toast Notifications */}
+      <ToastContainer toasts={toasts} onClose={removeToast} />
+
+      {/* Navigation Header */}
+      <Navbar
+        currentUser={currentUser}
+        activePage={activePage}
+        wifiName={wifiConfig.nama_wifi}
+        onNavigate={navigateTo}
+        onLogout={handleLogout}
+      />
+
+      {/* Main Page View Container */}
+      <main className="flex-1">
+        {activePage === 'login-register' && (
+          <LoginRegisterView
+            onLogin={handleLogin}
+            onRegister={handleRegister}
+            onNavigate={navigateTo}
+            isLoading={actionLoading}
+          />
+        )}
+
+        {activePage === 'landing' && (
+          <LandingView
+            wifiConfig={wifiConfig}
+            packages={activePackages}
+            currentUser={currentUser}
+            onSelectPackage={handleSelectPackage}
+            onNavigate={navigateTo}
+          />
+        )}
+
+        {activePage === 'dashboard' && currentUser && (
+          <CustomerDashboardView
+            currentUser={currentUser}
+            activeTransaction={activeTx}
+            recentTransactions={recentTxList}
+            notifications={notifications}
+            onNavigate={navigateTo}
+            onRefresh={loadData}
+          />
+        )}
+
+        {activePage === 'marketplace' && currentUser && (
+          <MarketplaceView
+            packages={activePackages}
+            currentUser={currentUser}
+            onSelectPackage={handleSelectPackage}
+            onNavigateTopUp={() => navigateTo('topup')}
+          />
+        )}
+
+        {activePage === 'riwayat' && (
+          <HistoryView transactions={recentTxList} />
+        )}
+
+        {activePage === 'profil' && currentUser && (
+          <ProfileView currentUser={currentUser} onNavigate={navigateTo} />
+        )}
+
+        {activePage === 'topup' && currentUser && (
+          <TopUpView currentUser={currentUser} onTopUp={handleCustomerTopUp} />
+        )}
+
+        {activePage === 'admin' && currentUser?.role === 'admin' && (
+          <AdminView
+            allUsers={allUserList}
+            allPackages={allPackages}
+            allTransactions={allTxList}
+            wifiConfig={wifiConfig}
+            onAddPackage={handleAddPackage}
+            onEditPackage={handleEditPackage}
+            onDeletePackage={handleDeletePackage}
+            onTogglePackage={handleTogglePackage}
+            onConfirmPayment={handleConfirmPayment}
+            onAddUserBalance={handleAddUserBalance}
+            onUpdateWifiConfig={handleUpdateWifiConfig}
+          />
+        )}
+      </main>
+
+      {/* Bottom Documentation & Usage Guide Footer */}
+      <footer className="bg-slate-900 border-t border-slate-800 py-10 px-4 sm:px-6 lg:px-8 text-xs text-slate-400">
+        <div className="max-w-7xl mx-auto space-y-6">
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pb-6 border-b border-slate-800">
+            <div>
+              <h4 className="font-bold text-white mb-2 text-sm">🌐 Tentang Wifi-Kuota Portal</h4>
+              <p className="text-[11px] leading-relaxed text-slate-400">
+                Aplikasi sistem hotspot WiFi berbayar (Paid WiFi Captive Portal) terintegrasi dengan Firebase Cloud Firestore dan Firebase Auth untuk penjualan kuota data internet secara real-time.
+              </p>
+            </div>
+
+            <div>
+              <h4 className="font-bold text-white mb-2 text-sm">💡 Panduan Penggunaan Customer</h4>
+              <ul className="space-y-1 text-[11px] text-slate-400 list-disc list-inside">
+                <li>Buka halaman Captive Portal dan pilih paket kuota.</li>
+                <li>Lakukan Login / Registrasi akun pelanggan.</li>
+                <li>Pilih metode pembayaran (Saldo, QRIS, Bank, atau Cash).</li>
+                <li>Pantau sisa kuota dan countdown waktu pada Dashboard.</li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="font-bold text-white mb-2 text-sm">🛡️ Panduan Admin Hotspot</h4>
+              <ul className="space-y-1 text-[11px] text-slate-400 list-disc list-inside">
+                <li>Login dengan akun Admin (<code className="text-amber-300 font-mono">admin@wifikota.com</code>).</li>
+                <li>Atur nama WiFi & pesan di menu Admin Panel → Setting WiFi.</li>
+                <li>Tambah / edit paket kuota & set harga/durasi.</li>
+                <li>Konfirmasi transaksi pending (QRIS / Cash / Transfer).</li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-500">
+            <div>
+              © 2026 <strong>Wifi-Kuota Premium System</strong>. Powered by Firebase Firestore & React.
+            </div>
+            <div className="flex gap-4">
+              <span className="text-emerald-400 font-semibold">● Live Firebase Connected</span>
+              <span>Port 3000 Container Active</span>
+            </div>
+          </div>
+
+        </div>
+      </footer>
+
+    </div>
+  );
+}

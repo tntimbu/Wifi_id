@@ -1,0 +1,6 @@
+{
+  "name": "Wifi-Kuota Premium",
+  "description": "Aplikasi Penjualan Kuota & Captive Portal Hotspot WiFi Berbayar dengan Firebase Auth, Firestore, Dashboard Customer, & Admin Panel",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
