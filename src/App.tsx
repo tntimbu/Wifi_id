@@ -3,7 +3,9 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
-  onAuthStateChanged
+  onAuthStateChanged,
+  GoogleAuthProvider,
+  signInWithPopup
 } from 'firebase/auth';
 import { auth, db } from './firebase';
 import {
@@ -271,6 +273,40 @@ export default function App() {
     }
   };
 
+  const handleGoogleLogin = async (): Promise<{ success: boolean; message?: string }> => {
+    setActionLoading(true);
+    try {
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      let profile = await getUserProfile(user.uid);
+      if (!profile) {
+        profile = await createUserProfile(
+          user.uid,
+          user.email || 'user@google.com',
+          user.displayName || 'Pengguna Google',
+          user.phoneNumber || '-'
+        );
+      }
+      addToast('success', `Berhasil masuk dengan Akun Google: ${user.displayName || user.email}`);
+      setActionLoading(false);
+      return { success: true };
+    } catch (err: any) {
+      console.error('Google Sign-In Error:', err);
+      let msg = formatAuthError(err);
+      if (err.code === 'auth/popup-closed-by-user') {
+        msg = 'Proses login Google dibatalkan atau jendela pop-up ditutup.';
+      } else if (err.code === 'auth/popup-blocked') {
+        msg = 'Pop-up login diblokir oleh browser. Silakan izinkan pop-up di browser Anda.';
+      } else if (err.code === 'auth/unauthorized-domain') {
+        msg = 'Domain ini belum diizinkan di Firebase Console. Gunakan pendaftaran Email & Password.';
+      }
+      addToast('error', msg);
+      setActionLoading(false);
+      return { success: false, message: msg };
+    }
+  };
+
   const handleLogout = async () => {
     await signOut(auth);
     setCurrentUser(null);
@@ -392,6 +428,7 @@ export default function App() {
           <LoginRegisterView
             onLogin={handleLogin}
             onRegister={handleRegister}
+            onGoogleLogin={handleGoogleLogin}
             onNavigate={navigateTo}
             isLoading={actionLoading}
           />
