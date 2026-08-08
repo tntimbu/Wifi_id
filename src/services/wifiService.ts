@@ -220,20 +220,86 @@ export async function updateWifiConfig(data: Partial<KonfigurasiWifi>): Promise<
   }, { merge: true });
 }
 
+export const DEFAULT_PACKAGES: PaketKuota[] = [
+  {
+    id: 'p1',
+    nama: 'Paket 2GB 12 Jam',
+    harga: 5000,
+    durasi_jam: 12,
+    batas_mb: 2000,
+    kecepatan: '10 Mbps',
+    aktif: true,
+    created_at: new Date().toISOString()
+  },
+  {
+    id: 'p2',
+    nama: 'Paket 5GB 24 Jam',
+    harga: 10000,
+    durasi_jam: 24,
+    batas_mb: 5000,
+    kecepatan: '10 Mbps',
+    aktif: true,
+    created_at: new Date().toISOString()
+  },
+  {
+    id: 'p3',
+    nama: 'Paket 10GB 24 Jam',
+    harga: 15000,
+    durasi_jam: 24,
+    batas_mb: 10000,
+    kecepatan: '20 Mbps',
+    aktif: true,
+    created_at: new Date().toISOString()
+  },
+  {
+    id: 'p4',
+    nama: 'Paket 15GB 48 Jam',
+    harga: 20000,
+    durasi_jam: 48,
+    batas_mb: 15000,
+    kecepatan: '20 Mbps',
+    aktif: true,
+    created_at: new Date().toISOString()
+  },
+  {
+    id: 'p5',
+    nama: 'Paket Unlimited 7 Hari',
+    harga: 50000,
+    durasi_jam: 168,
+    batas_mb: 0,
+    kecepatan: '30 Mbps',
+    aktif: true,
+    created_at: new Date().toISOString()
+  }
+];
+
 /**
  * Package Services
  */
 export async function getPaketAktif(): Promise<PaketKuota[]> {
-  const paketRef = collection(db, 'paket_kuota');
-  const snap = await getDocs(paketRef);
-  const list = snap.docs.map(d => ({ id: d.id, ...(d.data() as Record<string, any>) } as PaketKuota));
-  return list.filter(p => p.aktif);
+  try {
+    const paketRef = collection(db, 'paket_kuota');
+    const snap = await getDocs(paketRef);
+    if (snap.empty) return DEFAULT_PACKAGES;
+    const list = snap.docs.map(d => ({ id: d.id, ...(d.data() as Record<string, any>) } as PaketKuota));
+    const active = list.filter(p => p.aktif);
+    return active.length > 0 ? active : DEFAULT_PACKAGES;
+  } catch (err) {
+    console.warn('Note using package fallback:', err);
+    return DEFAULT_PACKAGES;
+  }
 }
 
 export async function getAllPaket(): Promise<PaketKuota[]> {
-  const paketRef = collection(db, 'paket_kuota');
-  const snap = await getDocs(paketRef);
-  return snap.docs.map(d => ({ id: d.id, ...(d.data() as Record<string, any>) } as PaketKuota));
+  try {
+    const paketRef = collection(db, 'paket_kuota');
+    const snap = await getDocs(paketRef);
+    if (snap.empty) return DEFAULT_PACKAGES;
+    return snap.docs.map(d => ({ id: d.id, ...(d.data() as Record<string, any>) } as PaketKuota));
+  } catch (err) {
+    console.warn('Note using package fallback:', err);
+    return DEFAULT_PACKAGES;
+  }
 }
 
 export async function tambahPaket(data: Omit<PaketKuota, 'id'>): Promise<string> {
@@ -558,13 +624,14 @@ export async function kirimNotifikasi(userId: string, judul: string, pesan: stri
 
 export async function getNotifikasiUser(userId: string): Promise<NotifikasiItem[]> {
   try {
+    if (!userId) return [];
     const notifRef = collection(db, 'notifikasi');
-    const q = query(notifRef, where('user_id', 'in', [userId, 'admin_group']), limit(30));
+    const q = query(notifRef, where('user_id', '==', userId), limit(30));
     const snap = await getDocs(q);
     const list = snap.docs.map(d => ({ id: d.id, ...(d.data() as Record<string, any>) } as NotifikasiItem));
     return list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   } catch (err) {
-    console.error('Error fetching notifications:', err);
+    console.warn('Note fetching notifications:', err);
     return [];
   }
 }
