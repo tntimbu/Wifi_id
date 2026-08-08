@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Wifi, Mail, Lock, User, Phone, ArrowRight, ShieldCheck, UserCheck } from 'lucide-react';
+import { Wifi, Mail, Lock, User, Phone, ArrowRight } from 'lucide-react';
 import { PageView } from '../../types';
 
 interface LoginRegisterProps {
@@ -55,18 +55,6 @@ export const LoginRegisterView: React.FC<LoginRegisterProps> = ({
         onNavigate('dashboard');
       }
     }
-  };
-
-  const fillDemoAdmin = () => {
-    setEmail('admin@wifikota.com');
-    setPassword('Admin123!');
-    setIsRegister(false);
-  };
-
-  const fillDemoUser = () => {
-    setEmail('customer@wifikota.com');
-    setPassword('Customer123!');
-    setIsRegister(false);
   };
 
   return (
@@ -245,29 +233,6 @@ export const LoginRegisterView: React.FC<LoginRegisterProps> = ({
           </svg>
           <span className="text-sm font-medium">Daftar / Masuk dengan Akun Google</span>
         </button>
-
-        {/* Demo Quick Fill Buttons for Testing */}
-        <div className="mt-8 pt-6 border-t border-slate-800">
-          <p className="text-center text-xs text-slate-500 mb-3 font-semibold uppercase tracking-wider">
-            Akses Cepat Pengujian Demo
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={fillDemoAdmin}
-              className="flex items-center justify-center gap-1.5 py-2 px-3 bg-amber-950/40 hover:bg-amber-900/60 border border-amber-800/50 text-amber-300 text-xs font-medium rounded-lg transition-colors"
-            >
-              <ShieldCheck className="w-3.5 h-3.5" /> Login Admin
-            </button>
-            <button
-              type="button"
-              onClick={fillDemoUser}
-              className="flex items-center justify-center gap-1.5 py-2 px-3 bg-blue-950/40 hover:bg-blue-900/60 border border-blue-800/50 text-blue-300 text-xs font-medium rounded-lg transition-colors"
-            >
-              <UserCheck className="w-3.5 h-3.5" /> Login Customer
-            </button>
-          </div>
-        </div>
 
         {/* Back to Landing Page */}
         <div className="mt-6 text-center">

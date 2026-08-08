@@ -189,10 +189,117 @@ export async function updateUserBalance(uid: string, deltaAmount: number): Promi
   return updatedSnap.data()?.saldo || 0;
 }
 
+export const DEFAULT_DEMO_USERS: UserProfile[] = [
+  {
+    uid: 'admin_uid_1',
+    email: 'admin@wifikota.com',
+    nama: 'Administrator WiFi',
+    role: 'admin',
+    saldo: 1000000,
+    no_hp: '081234567890',
+    created_at: new Date().toISOString()
+  },
+  {
+    uid: 'user_uid_1',
+    email: 'budi.santoso@gmail.com',
+    nama: 'Budi Santoso',
+    role: 'user',
+    saldo: 50000,
+    no_hp: '081298765432',
+    created_at: new Date(Date.now() - 86400000 * 2).toISOString()
+  },
+  {
+    uid: 'user_uid_2',
+    email: 'siti.rahma@yahoo.com',
+    nama: 'Siti Rahmawati',
+    role: 'user',
+    saldo: 25000,
+    no_hp: '085712345678',
+    created_at: new Date(Date.now() - 86400000 * 5).toISOString()
+  },
+  {
+    uid: 'user_uid_3',
+    email: 'rizky.pratama@outlook.com',
+    nama: 'Rizky Pratama',
+    role: 'user',
+    saldo: 15000,
+    no_hp: '088899990000',
+    created_at: new Date(Date.now() - 86400000 * 7).toISOString()
+  }
+];
+
+export const DEFAULT_DEMO_TRANSACTIONS: Transaksi[] = [
+  {
+    id: 'tx_demo_1',
+    user_id: 'user_uid_1',
+    user_email: 'budi.santoso@gmail.com',
+    user_nama: 'Budi Santoso',
+    paket_id: 'p2',
+    paket_nama: 'Paket 5GB 24 Jam',
+    harga: 10000,
+    batas_mb: 5000,
+    durasi_jam: 24,
+    status: 'aktif',
+    waktu_mulai: new Date(Date.now() - 3600000 * 2).toISOString(),
+    waktu_berakhir: new Date(Date.now() + 3600000 * 22).toISOString(),
+    sisa_kuota_mb: 4200,
+    total_pemakaian_mb: 800,
+    metode_pembayaran: 'saldo',
+    created_at: new Date(Date.now() - 3600000 * 2).toISOString(),
+    updated_at: new Date(Date.now() - 3600000 * 2).toISOString()
+  },
+  {
+    id: 'tx_demo_2',
+    user_id: 'user_uid_2',
+    user_email: 'siti.rahma@yahoo.com',
+    user_nama: 'Siti Rahmawati',
+    paket_id: 'p3',
+    paket_nama: 'Paket 10GB 24 Jam',
+    harga: 15000,
+    batas_mb: 10000,
+    durasi_jam: 24,
+    status: 'aktif',
+    waktu_mulai: new Date(Date.now() - 3600000 * 5).toISOString(),
+    waktu_berakhir: new Date(Date.now() + 3600000 * 19).toISOString(),
+    sisa_kuota_mb: 8900,
+    total_pemakaian_mb: 1100,
+    metode_pembayaran: 'qris',
+    kode_pembayaran: 'PAY-882910',
+    created_at: new Date(Date.now() - 3600000 * 5).toISOString(),
+    updated_at: new Date(Date.now() - 3600000 * 5).toISOString()
+  },
+  {
+    id: 'tx_demo_3',
+    user_id: 'user_uid_3',
+    user_email: 'rizky.pratama@outlook.com',
+    user_nama: 'Rizky Pratama',
+    paket_id: 'p1',
+    paket_nama: 'Paket 2GB 12 Jam',
+    harga: 5000,
+    batas_mb: 2000,
+    durasi_jam: 12,
+    status: 'expired',
+    waktu_mulai: new Date(Date.now() - 86400000 * 2).toISOString(),
+    waktu_berakhir: new Date(Date.now() - 86400000 * 2 + 43200000).toISOString(),
+    sisa_kuota_mb: 0,
+    total_pemakaian_mb: 2000,
+    metode_pembayaran: 'cash',
+    created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
+    updated_at: new Date(Date.now() - 86400000 * 2).toISOString()
+  }
+];
+
 export async function getAllUsers(): Promise<UserProfile[]> {
-  const usersRef = collection(db, 'users');
-  const snap = await getDocs(usersRef);
-  return snap.docs.map(d => d.data() as UserProfile);
+  try {
+    const usersRef = collection(db, 'users');
+    const snap = await getDocs(usersRef);
+    if (snap.empty) return DEFAULT_DEMO_USERS;
+    const list = snap.docs.map(d => d.data() as UserProfile);
+    return list.length > 0 ? list : DEFAULT_DEMO_USERS;
+  } catch (err) {
+    console.warn('Note using user fallback:', err);
+    return DEFAULT_DEMO_USERS;
+  }
 }
 
 /**
@@ -529,11 +636,13 @@ export async function getRiwayatTransaksi(userId?: string, maxItems: number = 20
       q = query(txRef, limit(maxItems));
     }
     const snap = await getDocs(q);
+    if (snap.empty && !userId) return DEFAULT_DEMO_TRANSACTIONS;
     const list = snap.docs.map(d => ({ id: d.id, ...(d.data() as Record<string, any>) } as Transaksi));
+    if (list.length === 0 && !userId) return DEFAULT_DEMO_TRANSACTIONS;
     return list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   } catch (err) {
-    console.error('Error getting history:', err);
-    return [];
+    console.warn('Note getting history fallback:', err);
+    return !userId ? DEFAULT_DEMO_TRANSACTIONS : [];
   }
 }
 

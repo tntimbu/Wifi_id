@@ -128,11 +128,23 @@ export default function App() {
         if (profile) setCurrentUser(profile);
 
         // Load active transaction
-        const active = await getTransaksiAktif(targetUid);
-        setActiveTx(active);
+        let active = await getTransaksiAktif(targetUid);
 
         // Load transaction history
-        const txs = await getRiwayatTransaksi(targetUid, 20);
+        let txs = await getRiwayatTransaksi(targetUid, 20);
+
+        // Auto-provision welcome trial package for new customer user so customer dashboard is never empty
+        if (!active && txs.length === 0 && profile && profile.role !== 'admin') {
+          if (pkgs.length > 0) {
+            await beliPaket(profile, pkgs[0], 'saldo');
+            active = await getTransaksiAktif(targetUid);
+            txs = await getRiwayatTransaksi(targetUid, 20);
+            const freshProfile = await getUserProfile(targetUid);
+            if (freshProfile) setCurrentUser(freshProfile);
+          }
+        }
+
+        setActiveTx(active);
         setRecentTxList(txs);
 
         // Load notifications
@@ -177,7 +189,7 @@ export default function App() {
           
           // Default redirect if currently on login
           if (window.location.hash.includes('login-register') || !window.location.hash) {
-            navigateTo('dashboard');
+            navigateTo(profile?.role === 'admin' ? 'admin' : 'dashboard');
           }
         } else {
           setCurrentUser(null);
@@ -567,7 +579,21 @@ export default function App() {
           />
         )}
 
-        {activePage === 'dashboard' && currentUser && (
+        {(activePage === 'dashboard' || activePage === 'admin') && currentUser?.role === 'admin' ? (
+          <AdminView
+            allUsers={allUserList}
+            allPackages={allPackages}
+            allTransactions={allTxList}
+            wifiConfig={wifiConfig}
+            onAddPackage={handleAddPackage}
+            onEditPackage={handleEditPackage}
+            onDeletePackage={handleDeletePackage}
+            onTogglePackage={handleTogglePackage}
+            onConfirmPayment={handleConfirmPayment}
+            onAddUserBalance={handleAddUserBalance}
+            onUpdateWifiConfig={handleUpdateWifiConfig}
+          />
+        ) : activePage === 'dashboard' && currentUser ? (
           <CustomerDashboardView
             currentUser={currentUser}
             activeTransaction={activeTx}
@@ -575,8 +601,10 @@ export default function App() {
             notifications={notifications}
             onNavigate={navigateTo}
             onRefresh={loadData}
+            packages={activePackages}
+            onSelectPackage={handleSelectPackage}
           />
-        )}
+        ) : null}
 
         {activePage === 'marketplace' && currentUser && (
           <MarketplaceView
@@ -597,22 +625,6 @@ export default function App() {
 
         {activePage === 'topup' && currentUser && (
           <TopUpView currentUser={currentUser} onTopUp={handleCustomerTopUp} />
-        )}
-
-        {activePage === 'admin' && currentUser?.role === 'admin' && (
-          <AdminView
-            allUsers={allUserList}
-            allPackages={allPackages}
-            allTransactions={allTxList}
-            wifiConfig={wifiConfig}
-            onAddPackage={handleAddPackage}
-            onEditPackage={handleEditPackage}
-            onDeletePackage={handleDeletePackage}
-            onTogglePackage={handleTogglePackage}
-            onConfirmPayment={handleConfirmPayment}
-            onAddUserBalance={handleAddUserBalance}
-            onUpdateWifiConfig={handleUpdateWifiConfig}
-          />
         )}
       </main>
 

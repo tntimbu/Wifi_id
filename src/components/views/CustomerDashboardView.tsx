@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Wifi, Clock, HardDrive, Zap, RefreshCw, ShoppingCart, History, ArrowUpRight, Play, Square, Bell, Wallet } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { Transaksi, UserProfile, PageView, NotifikasiItem } from '../../types';
+import { Transaksi, UserProfile, PageView, NotifikasiItem, PaketKuota, MetodePembayaran } from '../../types';
 import { simulateUsage } from '../../services/wifiService';
 
 interface CustomerDashboardProps {
@@ -11,6 +11,8 @@ interface CustomerDashboardProps {
   notifications: NotifikasiItem[];
   onNavigate: (page: PageView) => void;
   onRefresh: () => void;
+  packages?: PaketKuota[];
+  onSelectPackage?: (paket: PaketKuota, metode: MetodePembayaran) => void;
 }
 
 export const CustomerDashboardView: React.FC<CustomerDashboardProps> = ({
@@ -19,7 +21,9 @@ export const CustomerDashboardView: React.FC<CustomerDashboardProps> = ({
   recentTransactions,
   notifications,
   onNavigate,
-  onRefresh
+  onRefresh,
+  packages = [],
+  onSelectPackage
 }) => {
   const [timeLeft, setTimeLeft] = useState<{ hours: number; minutes: number; seconds: number }>({ hours: 0, minutes: 0, seconds: 0 });
   const [isSimulating, setIsSimulating] = useState(false);
@@ -211,21 +215,64 @@ export const CustomerDashboardView: React.FC<CustomerDashboardProps> = ({
 
         </div>
       ) : (
-        /* Empty / Expired Quota Card */
-        <div className="p-8 sm:p-12 text-center bg-slate-900/60 border border-slate-800 rounded-3xl space-y-4">
-          <div className="w-16 h-16 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-2xl flex items-center justify-center mx-auto">
-            <Wifi className="w-8 h-8 opacity-60" />
+        /* Empty / Expired Quota Card with Quick Package Selection */
+        <div className="p-6 sm:p-8 bg-slate-900/80 border border-slate-800 rounded-3xl space-y-6">
+          <div className="text-center space-y-2">
+            <div className="w-14 h-14 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-2xl flex items-center justify-center mx-auto">
+              <Wifi className="w-7 h-7" />
+            </div>
+            <h2 className="text-lg font-bold text-white">Belum Ada Paket Kuota Aktif</h2>
+            <p className="text-xs text-slate-400 max-w-md mx-auto">
+              Aktifkan paket kuota pilihan Anda sekarang dengan saldo akun (Rp {currentUser.saldo.toLocaleString('id-ID')}) untuk langsung terhubung ke jaringan internet cepat.
+            </p>
           </div>
-          <h2 className="text-xl font-bold text-white">Tidak Ada Paket Kuota Aktif</h2>
-          <p className="text-xs text-slate-400 max-w-md mx-auto">
-            Anda belum memiliki paket kuota yang aktif atau masa berlaku paket sebelumnya sudah berakhir. Pilih paket sekarang untuk terhubung ke internet.
-          </p>
-          <button
-            onClick={() => onNavigate('marketplace')}
-            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-600/30 inline-flex items-center gap-2"
-          >
-            <ShoppingCart className="w-4 h-4" /> Beli Paket Kuota Sekarang
-          </button>
+
+          {packages.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
+              {packages.slice(0, 3).map((pkg) => (
+                <div
+                  key={pkg.id}
+                  className="p-4 rounded-2xl bg-slate-800/80 border border-slate-700/60 hover:border-blue-500/50 transition-all flex flex-col justify-between space-y-3"
+                >
+                  <div>
+                    <div className="flex justify-between items-start">
+                      <span className="font-bold text-sm text-white">{pkg.nama}</span>
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                        {pkg.durasi_jam} Jam
+                      </span>
+                    </div>
+                    <div className="mt-2 text-lg font-extrabold text-emerald-400">
+                      Rp {pkg.harga.toLocaleString('id-ID')}
+                    </div>
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      {pkg.batas_mb === 0 ? 'Kuota Unlimited' : `Kuota ${pkg.batas_mb / 1000} GB`} • Up to {pkg.kecepatan}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (onSelectPackage) {
+                        onSelectPackage(pkg, 'saldo');
+                      } else {
+                        onNavigate('marketplace');
+                      }
+                    }}
+                    className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl transition-colors flex items-center justify-center gap-1.5"
+                  >
+                    <ShoppingCart className="w-3.5 h-3.5" /> Aktifkan Sekarang
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="text-center pt-2">
+            <button
+              onClick={() => onNavigate('marketplace')}
+              className="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-semibold text-xs rounded-xl inline-flex items-center gap-2 transition-colors"
+            >
+              Lihat Semua Paket Di Marketplace →
+            </button>
+          </div>
         </div>
       )}
 
