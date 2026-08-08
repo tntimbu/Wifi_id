@@ -3,8 +3,8 @@ import { Wifi, Mail, Lock, User, Phone, ArrowRight, ShieldCheck, UserCheck } fro
 import { PageView } from '../../types';
 
 interface LoginRegisterProps {
-  onLogin: (email: string, pass: string) => Promise<boolean>;
-  onRegister: (email: string, pass: string, nama: string, noHp: string) => Promise<boolean>;
+  onLogin: (email: string, pass: string) => Promise<{ success: boolean; message?: string }>;
+  onRegister: (email: string, pass: string, nama: string, noHp: string) => Promise<{ success: boolean; message?: string }>;
   onNavigate: (page: PageView) => void;
   isLoading: boolean;
 }
@@ -31,18 +31,22 @@ export const LoginRegisterView: React.FC<LoginRegisterProps> = ({
         setErrorMsg('Semua kolom harus diisi.');
         return;
       }
-      const success = await onRegister(email, password, nama, noHp);
-      if (!success) {
-        setErrorMsg('Pendaftaran gagal. Pastikan email belum terdaftar & password minimal 6 karakter.');
+      if (password.length < 6) {
+        setErrorMsg('Password minimal harus 6 karakter.');
+        return;
+      }
+      const res = await onRegister(email, password, nama, noHp);
+      if (!res.success) {
+        setErrorMsg(res.message || 'Pendaftaran gagal.');
       }
     } else {
       if (!email || !password) {
         setErrorMsg('Email dan Password wajib diisi.');
         return;
       }
-      const success = await onLogin(email, password);
-      if (!success) {
-        setErrorMsg('Login gagal. Periksa email dan password Anda.');
+      const res = await onLogin(email, password);
+      if (!res.success) {
+        setErrorMsg(res.message || 'Login gagal.');
       }
     }
   };

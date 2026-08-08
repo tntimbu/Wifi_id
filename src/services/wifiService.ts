@@ -121,28 +121,49 @@ export async function initDefaultSeedData() {
  * User Profile Services
  */
 export async function createUserProfile(uid: string, email: string, nama: string, noHp: string, role: 'admin' | 'user' = 'user'): Promise<UserProfile> {
-  const userRef = doc(db, 'users', uid);
-  const userSnap = await getDoc(userRef);
-
-  if (userSnap.exists()) {
-    return userSnap.data() as UserProfile;
-  }
-
-  // Force admin role if email is admin@wifikota.com
   const finalRole = email.toLowerCase() === 'admin@wifikota.com' ? 'admin' : role;
+  const userRef = doc(db, 'users', uid);
 
-  const newUser: UserProfile = {
-    uid,
-    email,
-    nama,
-    role: finalRole,
-    saldo: 50000, // Default welcome bonus balance
-    no_hp: noHp || '-',
-    created_at: new Date().toISOString()
-  };
+  try {
+    const userSnap = await getDoc(userRef);
 
-  await setDoc(userRef, newUser);
-  return newUser;
+    if (userSnap.exists()) {
+      const existingData = userSnap.data() as UserProfile;
+      // If profile already exists but has default/placeholder values, update with real user details
+      if ((existingData.nama === 'Pelanggan Hotspot' || !existingData.nama) && nama && nama !== 'Pelanggan Hotspot') {
+        await updateDoc(userRef, {
+          nama,
+          no_hp: noHp || existingData.no_hp || '-'
+        });
+        return { ...existingData, nama, no_hp: noHp || existingData.no_hp || '-' };
+      }
+      return existingData;
+    }
+
+    const newUser: UserProfile = {
+      uid,
+      email,
+      nama: nama || 'Pelanggan Hotspot',
+      role: finalRole,
+      saldo: 50000, // Default welcome bonus balance
+      no_hp: noHp || '-',
+      created_at: new Date().toISOString()
+    };
+
+    await setDoc(userRef, newUser);
+    return newUser;
+  } catch (err) {
+    console.error('Error in createUserProfile:', err);
+    return {
+      uid,
+      email,
+      nama: nama || 'Pelanggan Hotspot',
+      role: finalRole,
+      saldo: 50000,
+      no_hp: noHp || '-',
+      created_at: new Date().toISOString()
+    };
+  }
 }
 
 export async function getUserProfile(uid: string): Promise<UserProfile | null> {

@@ -191,14 +191,37 @@ export default function App() {
     };
   }, [loadData]);
 
+  // Helper to translate Firebase Auth errors
+  const formatAuthError = (err: any): string => {
+    const code = err?.code || '';
+    switch (code) {
+      case 'auth/email-already-in-use':
+        return 'Email ini sudah terdaftar. Silakan login atau gunakan email lain.';
+      case 'auth/invalid-email':
+        return 'Format email tidak valid. Periksa kembali penulisan email.';
+      case 'auth/weak-password':
+        return 'Password terlalu lemah. Gunakan minimal 6 karakter.';
+      case 'auth/user-not-found':
+      case 'auth/wrong-password':
+      case 'auth/invalid-credential':
+        return 'Email atau password salah. Periksa kembali data Anda.';
+      case 'auth/network-request-failed':
+        return 'Gagal terhubung ke server Firebase. Periksa koneksi internet Anda.';
+      case 'auth/too-many-requests':
+        return 'Terlalu banyak percobaan gagal. Silakan tunggu beberapa saat.';
+      default:
+        return err?.message ? `Pendaftaran gagal: ${err.message}` : 'Pendaftaran akun gagal.';
+    }
+  };
+
   // Auth Handlers
-  const handleLogin = async (email: string, pass: string): Promise<boolean> => {
+  const handleLogin = async (email: string, pass: string): Promise<{ success: boolean; message?: string }> => {
     setActionLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, pass);
       addToast('success', 'Selamat datang kembali! Login berhasil.');
       setActionLoading(false);
-      return true;
+      return { success: true };
     } catch (err: any) {
       console.error('Login error:', err);
       // Fallback: If demo login attempt fails because user doesn't exist yet, auto-create
@@ -215,31 +238,36 @@ export default function App() {
           );
           addToast('success', 'Akun demo berhasil dibuat & di-login!');
           setActionLoading(false);
-          return true;
+          return { success: true };
         } catch (regErr: any) {
-          addToast('error', regErr.message || 'Login / registrasi gagal.');
+          const msg = formatAuthError(regErr);
+          addToast('error', msg);
+          setActionLoading(false);
+          return { success: false, message: msg };
         }
       } else {
-        addToast('error', 'Login gagal. Periksa email dan password.');
+        const msg = formatAuthError(err);
+        addToast('error', msg);
+        setActionLoading(false);
+        return { success: false, message: msg };
       }
-      setActionLoading(false);
-      return false;
     }
   };
 
-  const handleRegister = async (email: string, pass: string, nama: string, noHp: string): Promise<boolean> => {
+  const handleRegister = async (email: string, pass: string, nama: string, noHp: string): Promise<{ success: boolean; message?: string }> => {
     setActionLoading(true);
     try {
       const cred = await createUserWithEmailAndPassword(auth, email, pass);
       await createUserProfile(cred.user.uid, email, nama, noHp, 'user');
       addToast('success', 'Pendaftaran akun berhasil! Selamat datang.');
       setActionLoading(false);
-      return true;
+      return { success: true };
     } catch (err: any) {
       console.error('Register error:', err);
-      addToast('error', err.message || 'Pendaftaran gagal.');
+      const msg = formatAuthError(err);
+      addToast('error', msg);
       setActionLoading(false);
-      return false;
+      return { success: false, message: msg };
     }
   };
 
