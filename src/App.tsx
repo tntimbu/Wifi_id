@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -107,6 +107,11 @@ export default function App() {
     window.location.hash = `#page-${page}`;
   };
 
+  const currentUserRef = useRef<UserProfile | null>(currentUser);
+  useEffect(() => {
+    currentUserRef.current = currentUser;
+  }, [currentUser]);
+
   // Fetch / Refresh Data
   const loadData = useCallback(async (uid?: string) => {
     try {
@@ -121,10 +126,19 @@ export default function App() {
       const allPkgs = await getAllPaket();
       setAllPackages(allPkgs);
 
-      const targetUid = uid || currentUser?.uid;
+      const targetUid = uid || currentUserRef.current?.uid || auth.currentUser?.uid;
       if (targetUid) {
         // Load fresh user profile
-        const profile = await getUserProfile(targetUid);
+        let profile = await getUserProfile(targetUid);
+        if (!profile) {
+          const savedLocal = localStorage.getItem('wifi_local_auth_user');
+          if (savedLocal) {
+            try {
+              const parsed = JSON.parse(savedLocal);
+              if (parsed.profile?.uid === targetUid) profile = parsed.profile;
+            } catch (e) {}
+          }
+        }
         if (profile) setCurrentUser(profile);
 
         // Load active transaction
@@ -152,7 +166,7 @@ export default function App() {
         setNotifications(notifs);
 
         // If admin, load all data
-        if (profile?.role === 'admin') {
+        if (profile?.role === 'admin' || currentUserRef.current?.role === 'admin') {
           const users = await getAllUsers();
           setAllUserList(users);
 
@@ -163,7 +177,7 @@ export default function App() {
     } catch (err) {
       console.error('Error loading app data:', err);
     }
-  }, [currentUser?.uid]);
+  }, []);
 
   // Initial Auth & Data Initialization
   useEffect(() => {
@@ -184,6 +198,7 @@ export default function App() {
               '081234567890'
             );
           }
+          localStorage.setItem('wifi_local_auth_user', JSON.stringify({ profile }));
           setCurrentUser(profile);
           await loadData(firebaseUser.uid);
           
@@ -192,8 +207,23 @@ export default function App() {
             navigateTo(profile?.role === 'admin' ? 'admin' : 'dashboard');
           }
         } else {
-          setCurrentUser(null);
-          await loadData();
+          // Check saved local auth session before dropping to null
+          const savedLocal = localStorage.getItem('wifi_local_auth_user');
+          let restored = false;
+          if (savedLocal) {
+            try {
+              const parsed = JSON.parse(savedLocal);
+              if (parsed.profile) {
+                setCurrentUser(parsed.profile);
+                await loadData(parsed.profile.uid);
+                restored = true;
+              }
+            } catch (e) {}
+          }
+          if (!restored) {
+            setCurrentUser(null);
+            await loadData();
+          }
         }
         setAuthLoading(false);
       });
@@ -253,6 +283,7 @@ export default function App() {
           isDbAdmin ? 'admin' : 'user'
         );
       }
+      localStorage.setItem('wifi_local_auth_user', JSON.stringify({ email, profile }));
       setCurrentUser(profile);
       addToast('success', 'Selamat datang kembali! Login berhasil.');
       setActionLoading(false);
@@ -294,6 +325,7 @@ export default function App() {
             '081234567890',
             isDbAdmin ? 'admin' : 'user'
           );
+          localStorage.setItem('wifi_local_auth_user', JSON.stringify({ email, profile }));
           setCurrentUser(profile);
           addToast('success', 'Akun berhasil dibuat & di-login!');
           setActionLoading(false);
@@ -334,6 +366,7 @@ export default function App() {
       const cred = await createUserWithEmailAndPassword(auth, email, pass);
       const isDbAdmin = email.toLowerCase() === 'admin@wifikota.com';
       const profile = await createUserProfile(cred.user.uid, email, nama, noHp, isDbAdmin ? 'admin' : 'user');
+      localStorage.setItem('wifi_local_auth_user', JSON.stringify({ email, profile }));
       setCurrentUser(profile);
       addToast('success', 'Pendaftaran akun berhasil! Selamat datang.');
       setActionLoading(false);
@@ -443,6 +476,7 @@ export default function App() {
   };
 
   const handleLogout = async () => {
+    localStorage.removeItem('wifi_local_auth_user');
     await signOut(auth);
     setCurrentUser(null);
     addToast('info', 'Anda telah keluar dari sistem.');
