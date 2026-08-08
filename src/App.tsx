@@ -218,13 +218,33 @@ export default function App() {
     }
   };
 
+  // Auto redirect from login page if user is logged in
+  useEffect(() => {
+    if (currentUser && activePage === 'login-register') {
+      navigateTo(currentUser.role === 'admin' ? 'admin' : 'dashboard');
+    }
+  }, [currentUser, activePage]);
+
   // Auth Handlers
   const handleLogin = async (email: string, pass: string): Promise<{ success: boolean; message?: string }> => {
     setActionLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, pass);
+      const cred = await signInWithEmailAndPassword(auth, email, pass);
+      let profile = await getUserProfile(cred.user.uid);
+      if (!profile) {
+        const isDbAdmin = email.toLowerCase() === 'admin@wifikota.com';
+        profile = await createUserProfile(
+          cred.user.uid,
+          email,
+          isDbAdmin ? 'Administrator WiFi' : 'Pelanggan Hotspot',
+          '081234567890',
+          isDbAdmin ? 'admin' : 'user'
+        );
+      }
+      setCurrentUser(profile);
       addToast('success', 'Selamat datang kembali! Login berhasil.');
       setActionLoading(false);
+      navigateTo(profile.role === 'admin' ? 'admin' : 'dashboard');
       return { success: true };
     } catch (err: any) {
       console.error('Login error:', err);
@@ -239,6 +259,7 @@ export default function App() {
             setCurrentUser(parsed.profile);
             addToast('success', 'Selamat datang kembali! Login berhasil.');
             setActionLoading(false);
+            navigateTo(parsed.profile?.role === 'admin' ? 'admin' : 'dashboard');
             return { success: true };
           }
         } catch (e) {}
@@ -264,6 +285,7 @@ export default function App() {
           setCurrentUser(profile);
           addToast('success', 'Akun berhasil dibuat & di-login!');
           setActionLoading(false);
+          navigateTo(profile.role === 'admin' ? 'admin' : 'dashboard');
           return { success: true };
         } catch (regErr: any) {
           // Fallback to local profile session seamlessly
@@ -282,6 +304,7 @@ export default function App() {
           setCurrentUser(profile);
           addToast('success', 'Berhasil masuk ke aplikasi!');
           setActionLoading(false);
+          navigateTo(profile.role === 'admin' ? 'admin' : 'dashboard');
           return { success: true };
         }
       } else {
@@ -297,10 +320,12 @@ export default function App() {
     setActionLoading(true);
     try {
       const cred = await createUserWithEmailAndPassword(auth, email, pass);
-      const profile = await createUserProfile(cred.user.uid, email, nama, noHp, 'user');
+      const isDbAdmin = email.toLowerCase() === 'admin@wifikota.com';
+      const profile = await createUserProfile(cred.user.uid, email, nama, noHp, isDbAdmin ? 'admin' : 'user');
       setCurrentUser(profile);
       addToast('success', 'Pendaftaran akun berhasil! Selamat datang.');
       setActionLoading(false);
+      navigateTo(profile.role === 'admin' ? 'admin' : 'dashboard');
       return { success: true };
     } catch (err: any) {
       console.error('Register error:', err);
@@ -333,6 +358,7 @@ export default function App() {
         setCurrentUser(profile);
         addToast('success', 'Pendaftaran berhasil! Selamat datang di WiFi Kuota.');
         setActionLoading(false);
+        navigateTo(profile.role === 'admin' ? 'admin' : 'dashboard');
         return { success: true };
       } catch (localErr) {
         const msg = formatAuthError(err);
@@ -361,6 +387,7 @@ export default function App() {
       setCurrentUser(profile);
       addToast('success', `Berhasil masuk dengan Akun Google: ${user.displayName || user.email}`);
       setActionLoading(false);
+      navigateTo(profile.role === 'admin' ? 'admin' : 'dashboard');
       return { success: true };
     } catch (err: any) {
       console.error('Google Sign-In Error:', err);
@@ -393,6 +420,7 @@ export default function App() {
         setCurrentUser(profile);
         addToast('success', 'Berhasil masuk dengan Akun Google!');
         setActionLoading(false);
+        navigateTo(profile.role === 'admin' ? 'admin' : 'dashboard');
         return { success: true };
       } catch (e) {
         addToast('error', msg);

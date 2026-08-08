@@ -40,6 +40,8 @@ export const LoginRegisterView: React.FC<LoginRegisterProps> = ({
       const res = await onRegister(email, password, nama, noHp);
       if (!res.success) {
         setErrorMsg(res.message || 'Pendaftaran gagal.');
+      } else {
+        onNavigate('dashboard');
       }
     } else {
       if (!email || !password) {
@@ -49,6 +51,8 @@ export const LoginRegisterView: React.FC<LoginRegisterProps> = ({
       const res = await onLogin(email, password);
       if (!res.success) {
         setErrorMsg(res.message || 'Login gagal.');
+      } else {
+        onNavigate('dashboard');
       }
     }
   };
@@ -212,7 +216,9 @@ export const LoginRegisterView: React.FC<LoginRegisterProps> = ({
             if (onGoogleLogin) {
               setErrorMsg('');
               const res = await onGoogleLogin();
-              if (!res.success && res.message) {
+              if (res.success) {
+                onNavigate('dashboard');
+              } else if (res.message) {
                 setErrorMsg(res.message);
               }
             }
