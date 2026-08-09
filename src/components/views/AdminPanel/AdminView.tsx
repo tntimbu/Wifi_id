@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   ShieldCheck, LayoutDashboard, Package, Users, Receipt, Settings,
-  Plus, Trash2, Edit, Check, X, FileSpreadsheet, Wallet, Wifi, Clock, Search, CheckCircle2
+  Plus, Trash2, Edit, Check, X, FileSpreadsheet, Wallet, Wifi, Clock, Search, CheckCircle2, Upload
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import {
@@ -21,6 +21,8 @@ interface AdminViewProps {
   onConfirmPayment: (txId: string) => Promise<void>;
   onAddUserBalance: (uid: string, delta: number) => Promise<void>;
   onUpdateWifiConfig: (data: Partial<KonfigurasiWifi>) => Promise<void>;
+  onDeleteUser?: (uid: string) => Promise<void>;
+  onDeleteTransaction?: (txId: string) => Promise<void>;
 }
 
 export const AdminView: React.FC<AdminViewProps> = ({
@@ -34,7 +36,9 @@ export const AdminView: React.FC<AdminViewProps> = ({
   onTogglePackage,
   onConfirmPayment,
   onAddUserBalance,
-  onUpdateWifiConfig
+  onUpdateWifiConfig,
+  onDeleteUser,
+  onDeleteTransaction
 }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
 
@@ -374,16 +378,29 @@ export const AdminView: React.FC<AdminViewProps> = ({
                     <td className="p-3 uppercase font-bold text-[10px] text-amber-400">{u.role}</td>
                     <td className="p-3 font-bold text-emerald-400">Rp {u.saldo.toLocaleString('id-ID')}</td>
                     <td className="p-3">
-                      <button
-                        onClick={() => {
-                          setTargetUser(u);
-                          setBalanceDelta(20000);
-                          setBalanceModalOpen(true);
-                        }}
-                        className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px] rounded-lg shadow-sm"
-                      >
-                        + Tambah Saldo
-                      </button>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => {
+                            setTargetUser(u);
+                            setBalanceDelta(20000);
+                            setBalanceModalOpen(true);
+                          }}
+                          className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px] rounded-lg shadow-sm transition-all"
+                        >
+                          + Tambah Saldo
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm(`Apakah Anda yakin ingin menghapus akun pelanggan ${u.nama} (${u.email})?`)) {
+                              onDeleteUser?.(u.uid);
+                            }
+                          }}
+                          className="p-1.5 bg-rose-600/20 hover:bg-rose-600/40 text-rose-400 border border-rose-500/30 rounded-lg transition-all"
+                          title="Hapus Pelanggan"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -450,14 +467,27 @@ export const AdminView: React.FC<AdminViewProps> = ({
                       </span>
                     </td>
                     <td className="p-3">
-                      {tx.status === 'pending' && (
+                      <div className="flex items-center gap-1.5">
+                        {tx.status === 'pending' && (
+                          <button
+                            onClick={() => onConfirmPayment(tx.id)}
+                            className="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold rounded-lg shadow"
+                          >
+                            Approve
+                          </button>
+                        )}
                         <button
-                          onClick={() => onConfirmPayment(tx.id)}
-                          className="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold rounded-lg shadow"
+                          onClick={() => {
+                            if (confirm(`Apakah Anda yakin ingin menghapus transaksi ${tx.id} (${tx.paket_nama})?`)) {
+                              onDeleteTransaction?.(tx.id);
+                            }
+                          }}
+                          className="p-1.5 bg-rose-600/20 hover:bg-rose-600/40 text-rose-400 border border-rose-500/30 rounded-lg transition-all"
+                          title="Hapus Transaksi"
                         >
-                          Approve
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
-                      )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -541,16 +571,49 @@ export const AdminView: React.FC<AdminViewProps> = ({
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">URL Gambar QRIS (Barcode Image URL)</label>
-              <input
-                type="text"
-                value={qrisUrl}
-                onChange={(e) => setQrisUrl(e.target.value)}
-                placeholder="https://..."
-                className="w-full px-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500"
-              />
-              <p className="text-[10px] text-slate-500 mt-1">Gunakan link gambar QRIS resmi Anda atau buat QRis statis dari provider pembayaran Anda.</p>
+            <div className="space-y-2">
+              <label className="block text-xs font-semibold text-slate-300">Gambar Barcode QRIS (Upload File Gambar atau Tempel Link URL)</label>
+              <div className="flex flex-col sm:flex-row items-center gap-3">
+                <label className="cursor-pointer px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs flex items-center gap-2 shadow-md transition-all shrink-0">
+                  <Upload className="w-4 h-4" />
+                  <span>Upload Gambar QRIS</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                          if (event.target?.result) {
+                            setQrisUrl(event.target.result as string);
+                          }
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
+                </label>
+                <span className="text-xs text-slate-500 font-semibold">atau</span>
+                <input
+                  type="text"
+                  value={qrisUrl}
+                  onChange={(e) => setQrisUrl(e.target.value)}
+                  placeholder="Tempelkan URL Gambar QRIS (https://...)"
+                  className="w-full px-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500"
+                />
+              </div>
+
+              {qrisUrl && (
+                <div className="flex items-center gap-3 pt-2 p-3 bg-slate-950/80 rounded-xl border border-slate-800">
+                  <img src={qrisUrl} alt="Preview QRIS" className="w-20 h-20 object-contain bg-white p-1 rounded-lg border border-slate-700 shrink-0" />
+                  <div className="text-xs space-y-1">
+                    <span className="font-bold text-emerald-400 block">Preview Barcode QRIS</span>
+                    <p className="text-[10px] text-slate-400">Gambar barcode QRIS ini yang akan ditampilkan pada halaman Top Up dan Checkout pelanggan.</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

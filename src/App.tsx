@@ -28,7 +28,13 @@ import {
   updateUserBalance,
   updateWifiConfig,
   cekBatasPerJam,
-  exportTransaksiCSV
+  exportTransaksiCSV,
+  deleteUserAccount,
+  deleteTransactionById,
+  subscribeToWifiConfig,
+  subscribeToAllUsers,
+  subscribeToAllTransactions,
+  subscribeToAllPackages
 } from './services/wifiService';
 import {
   UserProfile,
@@ -234,6 +240,46 @@ export default function App() {
       if (unsubscribe) unsubscribe();
     };
   }, [loadData]);
+
+  // Real-Time Subscriptions across devices and tabs
+  useEffect(() => {
+    const unsubConfig = subscribeToWifiConfig((cfg) => {
+      setWifiConfig(cfg);
+    });
+
+    const unsubUsers = subscribeToAllUsers((users) => {
+      setAllUserList(users);
+      if (currentUserRef.current) {
+        const updatedSelf = users.find(u => u.uid === currentUserRef.current?.uid);
+        if (updatedSelf) {
+          setCurrentUser(updatedSelf);
+          localStorage.setItem('wifi_local_auth_user', JSON.stringify({ profile: updatedSelf }));
+        }
+      }
+    });
+
+    const unsubTxs = subscribeToAllTransactions((txs) => {
+      setAllTxList(txs);
+      if (currentUserRef.current) {
+        const myTxs = txs.filter(t => t.user_id === currentUserRef.current?.uid);
+        setRecentTxList(myTxs);
+        const active = myTxs.find(t => t.status === 'aktif') || null;
+        setActiveTx(active);
+      }
+    });
+
+    const unsubPkgs = subscribeToAllPackages((pkgs) => {
+      setAllPackages(pkgs);
+      setActivePackages(pkgs.filter(p => p.aktif));
+    });
+
+    return () => {
+      unsubConfig();
+      unsubUsers();
+      unsubTxs();
+      unsubPkgs();
+    };
+  }, []);
 
   // Helper to translate Firebase Auth errors
   const formatAuthError = (err: any): string => {
@@ -557,6 +603,26 @@ export default function App() {
     await loadData();
   };
 
+  const handleDeleteUser = async (uid: string) => {
+    try {
+      await deleteUserAccount(uid);
+      addToast('success', 'Akun pelanggan berhasil dihapus.');
+      await loadData();
+    } catch (err) {
+      addToast('error', 'Gagal menghapus akun pelanggan.');
+    }
+  };
+
+  const handleDeleteTransaction = async (txId: string) => {
+    try {
+      await deleteTransactionById(txId);
+      addToast('success', 'Transaksi berhasil dihapus.');
+      await loadData();
+    } catch (err) {
+      addToast('error', 'Gagal menghapus transaksi.');
+    }
+  };
+
   // Top Up Handler for Customer
   const handleCustomerTopUp = async (amount: number) => {
     if (!currentUser) return;
@@ -626,6 +692,8 @@ export default function App() {
             onConfirmPayment={handleConfirmPayment}
             onAddUserBalance={handleAddUserBalance}
             onUpdateWifiConfig={handleUpdateWifiConfig}
+            onDeleteUser={handleDeleteUser}
+            onDeleteTransaction={handleDeleteTransaction}
           />
         ) : activePage === 'dashboard' && currentUser ? (
           <CustomerDashboardView

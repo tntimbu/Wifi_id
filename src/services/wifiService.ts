@@ -779,6 +779,72 @@ export async function getNotifikasiUser(userId: string): Promise<NotifikasiItem[
   }
 }
 
+export async function deleteUserAccount(uid: string): Promise<void> {
+  try {
+    const userRef = doc(db, 'users', uid);
+    await deleteDoc(userRef);
+  } catch (err) {
+    console.error('Error deleting user account:', err);
+    throw err;
+  }
+}
+
+export async function deleteTransactionById(txId: string): Promise<void> {
+  try {
+    const txRef = doc(db, 'transaksi', txId);
+    await deleteDoc(txRef);
+  } catch (err) {
+    console.error('Error deleting transaction:', err);
+    throw err;
+  }
+}
+
+/**
+ * Real-Time Subscriptions Across Devices
+ */
+export function subscribeToWifiConfig(callback: (cfg: KonfigurasiWifi) => void) {
+  const configRef = doc(db, 'konfigurasi_wifi', WIFI_CONFIG_ID);
+  return onSnapshot(configRef, (snap) => {
+    if (snap.exists()) {
+      const data = snap.data() as KonfigurasiWifi;
+      callback({
+        ...data,
+        pembayaran: data.pembayaran ? {
+          ...DEFAULT_PAYMENT_CONFIG,
+          ...data.pembayaran,
+          va_accounts: data.pembayaran.va_accounts && data.pembayaran.va_accounts.length > 0 ? data.pembayaran.va_accounts : DEFAULT_PAYMENT_CONFIG.va_accounts,
+          ewallet_accounts: data.pembayaran.ewallet_accounts && data.pembayaran.ewallet_accounts.length > 0 ? data.pembayaran.ewallet_accounts : DEFAULT_PAYMENT_CONFIG.ewallet_accounts
+        } : DEFAULT_PAYMENT_CONFIG
+      });
+    }
+  }, (err) => console.warn('WifiConfig listener error:', err));
+}
+
+export function subscribeToAllUsers(callback: (users: UserProfile[]) => void) {
+  const usersRef = collection(db, 'users');
+  return onSnapshot(usersRef, (snap) => {
+    const list = snap.docs.map(d => ({ uid: d.id, ...(d.data() as Record<string, any>) } as UserProfile));
+    callback(list);
+  }, (err) => console.warn('Users listener error:', err));
+}
+
+export function subscribeToAllTransactions(callback: (txs: Transaksi[]) => void) {
+  const txRef = collection(db, 'transaksi');
+  return onSnapshot(txRef, (snap) => {
+    const list = snap.docs.map(d => ({ id: d.id, ...(d.data() as Record<string, any>) } as Transaksi));
+    list.sort((a, b) => new Date(b.created_at || b.waktu_mulai).getTime() - new Date(a.created_at || a.waktu_mulai).getTime());
+    callback(list);
+  }, (err) => console.warn('Transactions listener error:', err));
+}
+
+export function subscribeToAllPackages(callback: (packages: PaketKuota[]) => void) {
+  const pkgRef = collection(db, 'paket_kuota');
+  return onSnapshot(pkgRef, (snap) => {
+    const list = snap.docs.map(d => ({ id: d.id, ...(d.data() as Record<string, any>) } as PaketKuota));
+    callback(list);
+  }, (err) => console.warn('Packages listener error:', err));
+}
+
 export async function tandaiBacaNotifikasi(notifId: string): Promise<void> {
   const docRef = doc(db, 'notifikasi', notifId);
   await updateDoc(docRef, { dibaca: true });
