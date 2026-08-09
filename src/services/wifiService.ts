@@ -543,7 +543,7 @@ export async function beliPaket(
       sisa_kuota_mb: paket.batas_mb, // 0 if unlimited
       total_pemakaian_mb: 0,
       metode_pembayaran: metode,
-      kode_pembayaran: kodePembayaran || undefined,
+      kode_pembayaran: kodePembayaran || '-',
       created_at: startTime,
       updated_at: startTime
     };
