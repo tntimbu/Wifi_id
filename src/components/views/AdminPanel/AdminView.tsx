@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   ShieldCheck, LayoutDashboard, Package, Users, Receipt, Settings,
-  Plus, Trash2, Edit, Check, X, FileSpreadsheet, Wallet, Wifi, Clock, Search, CheckCircle2, Upload
+  Plus, Trash2, Edit, Check, X, FileSpreadsheet, Wallet, Wifi, Clock, Search, CheckCircle2, Upload, Smartphone
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import {
@@ -520,6 +520,35 @@ export const AdminView: React.FC<AdminViewProps> = ({
             <h3 className="text-base font-bold flex items-center gap-2 text-blue-400">
               <Wifi className="w-5 h-5" /> Konfigurasi Hotspot & SSID Captive Portal
             </h3>
+
+            {/* Smartfren Hotspot Preset Banner */}
+            <div className="p-4 rounded-xl bg-gradient-to-r from-blue-950/80 to-indigo-950/80 border border-blue-800/80 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-blue-300 flex items-center gap-1.5">
+                  <Smartphone className="w-4 h-4 text-blue-400" /> Hotspot Handphone Terhubung (Smartfren)
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold">
+                  AKTIF & TERHUBUNG
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs pt-1">
+                <div className="p-2 rounded-lg bg-slate-950/70 border border-slate-800">
+                  <span className="block text-[10px] text-slate-400">SSID Hotspot:</span>
+                  <strong className="text-white font-mono">Eklepedia.id</strong>
+                </div>
+                <div className="p-2 rounded-lg bg-slate-950/70 border border-slate-800">
+                  <span className="block text-[10px] text-slate-400">Password Wi-Fi:</span>
+                  <strong className="text-amber-400 font-mono">Eklesia_030918</strong>
+                </div>
+                <div className="p-2 rounded-lg bg-slate-950/70 border border-slate-800">
+                  <span className="block text-[10px] text-slate-400">Provider Internet:</span>
+                  <strong className="text-emerald-400 font-semibold">Smartfren Kuota Melimpah</strong>
+                </div>
+              </div>
+              <p className="text-[11px] text-slate-300 pt-1 leading-relaxed">
+                💡 <strong>Cara Kerja Sistem Pembatasan Kuota HP:</strong> Saat pelanggan terhubung ke Hotspot HP <strong>Eklepedia.id</strong> (Password: <code>Eklesia_030918</code>), bagikan QR Code / URL link portal ini kepada pelanggan. Pelanggan memilih paket kuota dan melakukan top-up/pembayaran. Setelah Admin memverifikasi pembayaran, kuota dan waktu akses internet pelanggan otomatis aktif dan terpantau real-time oleh sistem ini.
+              </p>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>

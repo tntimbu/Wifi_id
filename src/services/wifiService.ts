@@ -45,12 +45,20 @@ export async function initDefaultSeedData() {
     if (!configSnap.exists()) {
       const defaultConfig: KonfigurasiWifi = {
         id: WIFI_CONFIG_ID,
-        nama_wifi: 'Wifi-Kuota Premium',
-        welcome_message: 'Selamat datang di Wifi-Kuota Premium! Nikmati internet cepat dan stabil. Silakan pilih paket yang sesuai dengan kebutuhan Anda.',
+        nama_wifi: 'Eklepedia.id',
+        welcome_message: 'Selamat datang di Hotspot Eklepedia.id (Smartfren Unlimited)! Silakan pilih paket kuota internet dan lakukan pembayaran/top-up saldo untuk mulai berselancar.',
         logo_url: '',
         updated_at: new Date().toISOString()
       };
       await setDoc(configRef, defaultConfig);
+    } else {
+      const existing = configSnap.data() as KonfigurasiWifi;
+      if (existing.nama_wifi === 'Wifi-Kuota Premium' || !existing.nama_wifi) {
+        await updateDoc(configRef, {
+          nama_wifi: 'Eklepedia.id',
+          welcome_message: 'Selamat datang di Hotspot Eklepedia.id (Smartfren Unlimited)! Silakan pilih paket kuota internet dan lakukan pembayaran/top-up saldo untuk mulai berselancar.'
+        });
+      }
     }
   } catch (err) {
     console.warn('Note on wifi config initialization:', err);
