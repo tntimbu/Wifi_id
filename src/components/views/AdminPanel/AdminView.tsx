@@ -546,8 +546,31 @@ export const AdminView: React.FC<AdminViewProps> = ({
                 </div>
               </div>
               <p className="text-[11px] text-slate-300 pt-1 leading-relaxed">
-                💡 <strong>Cara Kerja Sistem Pembatasan Kuota HP:</strong> Saat pelanggan terhubung ke Hotspot HP <strong>Eklepedia.id</strong> (Password: <code>Eklesia_030918</code>), bagikan QR Code / URL link portal ini kepada pelanggan. Pelanggan memilih paket kuota dan melakukan top-up/pembayaran. Setelah Admin memverifikasi pembayaran, kuota dan waktu akses internet pelanggan otomatis aktif dan terpantau real-time oleh sistem ini.
+                💡 <strong>Cara Kerja Sistem Pembatasan Kuota HP:</strong> Saat pelanggan terhubung ke Hotspot HP <strong>Eklepedia.id</strong> (Password: <code>Eklesia_030918</code>), arahkan pelanggan membuka portal melalui link/QR Code di bawah. Pelanggan memilih paket kuota dan melakukan top-up/pembayaran. Setelah Admin memverifikasi pembayaran, kuota dan waktu akses internet pelanggan otomatis aktif dan terpantau real-time oleh sistem ini.
               </p>
+
+              {/* Direct Link & QR Code Banner */}
+              <div className="pt-3 border-t border-slate-800/80 space-y-2">
+                <span className="block text-xs font-bold text-amber-300">
+                  🔗 Link Portal Pelanggan (Captive Portal URL):
+                </span>
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                  <input
+                    type="text"
+                    readOnly
+                    value="https://tntimbu.github.io/Wifi_id/#page-landing"
+                    className="w-full px-3 py-2 bg-slate-950 border border-amber-500/30 rounded-lg text-xs font-mono text-amber-400 font-bold select-all"
+                  />
+                  <a
+                    href="https://tntimbu.github.io/Wifi_id/#page-landing"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs rounded-lg transition-colors shrink-0 text-center flex items-center justify-center gap-1"
+                  >
+                    Buka Link Portal ↗
+                  </a>
+                </div>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
