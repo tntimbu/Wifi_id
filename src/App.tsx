@@ -537,13 +537,6 @@ export default function App() {
       return;
     }
 
-    // Rate Limiting Check
-    const rateCheck = await cekBatasPerJam(currentUser.uid, paket.harga);
-    if (rateCheck.isExceeded) {
-      addToast('error', 'Peringatan: Batas akumulasi transaksi Anda melebihi Rp 50.000 / jam untuk keamanan.');
-      return;
-    }
-
     setActionLoading(true);
     const res = await beliPaket(currentUser, paket, metode);
     setActionLoading(false);

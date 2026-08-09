@@ -471,32 +471,10 @@ export async function togglePaket(id: string, currentStatus: boolean): Promise<v
  * Rate Limiting Check (Rp 10.000 / Jam safeguard)
  */
 export async function cekBatasPerJam(userId: string, harga: number): Promise<{ isExceeded: boolean; totalSpentLastHour: number }> {
-  try {
-    const q = query(
-      collection(db, 'transaksi'),
-      where('user_id', '==', userId)
-    );
-    const snap = await getDocs(q);
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).getTime();
-    
-    let totalSpent = 0;
-    snap.docs.forEach(d => {
-      const data = d.data() as Transaksi;
-      const createdAtTime = new Date(data.created_at).getTime();
-      if (createdAtTime >= oneHourAgo && data.status !== 'expired') {
-        totalSpent += data.harga;
-      }
-    });
-
-    const newTotal = totalSpent + harga;
-    return {
-      isExceeded: newTotal > 50000, // Safe threshold, e.g. Rp 50.000/jam limit
-      totalSpentLastHour: totalSpent
-    };
-  } catch (err) {
-    console.error('Error checking rate limit:', err);
-    return { isExceeded: false, totalSpentLastHour: 0 };
-  }
+  return {
+    isExceeded: false,
+    totalSpentLastHour: 0
+  };
 }
 
 /**
