@@ -584,8 +584,63 @@ export async function beliPaket(
   }
 }
 
+export async function submitTopUpRequest(
+  user: UserProfile,
+  amount: number,
+  metode: string,
+  transferRef?: string
+): Promise<{ success: boolean; message: string; txId?: string }> {
+  try {
+    const now = new Date().toISOString();
+    const payCode = transferRef || `TOPUP-${Math.floor(100000 + Math.random() * 900000)}`;
+
+    const newTx: Omit<Transaksi, 'id'> = {
+      user_id: user.uid,
+      user_email: user.email,
+      user_nama: user.nama,
+      paket_id: 'topup',
+      paket_nama: `Top Up Saldo Rp ${amount.toLocaleString('id-ID')}`,
+      harga: amount,
+      batas_mb: 0,
+      durasi_jam: 0,
+      status: 'pending',
+      waktu_mulai: now,
+      waktu_berakhir: now,
+      sisa_kuota_mb: 0,
+      total_pemakaian_mb: 0,
+      metode_pembayaran: metode as MetodePembayaran,
+      kode_pembayaran: payCode,
+      created_at: now,
+      updated_at: now
+    };
+
+    const docRef = await addDoc(collection(db, 'transaksi'), newTx);
+
+    await kirimNotifikasi(
+      user.uid,
+      'Top Up Menunggu Verifikasi Admin ⏳',
+      `Permintaan Top Up sebesar Rp ${amount.toLocaleString('id-ID')} (${metode.toUpperCase()}) telah diterima dan menunggu verifikasi pembayaran oleh Admin.`
+    );
+
+    await kirimNotifikasi(
+      'admin_group',
+      'Permintaan Top Up Baru 💰',
+      `User ${user.nama} (${user.email}) mengirim Top Up Rp ${amount.toLocaleString('id-ID')} via ${metode.toUpperCase()}. Mohon verifikasi.`
+    );
+
+    return {
+      success: true,
+      message: 'Permintaan Top Up dikirim! Menunggu verifikasi pembayaran oleh Admin.',
+      txId: docRef.id
+    };
+  } catch (err: any) {
+    console.error('Error submitting top up request:', err);
+    return { success: false, message: err?.message || 'Gagal mengirim permintaan top up' };
+  }
+}
+
 /**
- * Admin Confirms Pending Payment
+ * Admin Confirms Pending Payment (Top Up or Package Purchase)
  */
 export async function konfirmasiPembayaran(transaksiId: string): Promise<boolean> {
   try {
@@ -596,21 +651,40 @@ export async function konfirmasiPembayaran(transaksiId: string): Promise<boolean
     const data = snap.data() as Transaksi;
     const now = new Date();
     const startTime = now.toISOString();
-    const endTime = new Date(now.getTime() + data.durasi_jam * 60 * 60 * 1000).toISOString();
 
-    await updateDoc(docRef, {
-      status: 'aktif',
-      waktu_mulai: startTime,
-      waktu_berakhir: endTime,
-      sisa_kuota_mb: data.batas_mb,
-      updated_at: startTime
-    });
+    if (data.paket_id === 'topup') {
+      // Top Up Approval
+      await updateDoc(docRef, {
+        status: 'sukses',
+        updated_at: startTime
+      });
 
-    await kirimNotifikasi(
-      data.user_id,
-      'Pembayaran Dikonfirmasi ✅',
-      `Pembayaran paket ${data.paket_nama} telah dikonfirmasi oleh Admin! Kuota Anda sudah aktif.`
-    );
+      // Add balance to user
+      await updateUserBalance(data.user_id, data.harga);
+
+      await kirimNotifikasi(
+        data.user_id,
+        'Top Up Dikonfirmasi ✅',
+        `Pembayaran Top Up saldo sebesar Rp ${data.harga.toLocaleString('id-ID')} telah diverifikasi Admin dan otomatis masuk ke akun Anda!`
+      );
+    } else {
+      // Package Purchase Approval
+      const endTime = new Date(now.getTime() + data.durasi_jam * 60 * 60 * 1000).toISOString();
+
+      await updateDoc(docRef, {
+        status: 'aktif',
+        waktu_mulai: startTime,
+        waktu_berakhir: endTime,
+        sisa_kuota_mb: data.batas_mb,
+        updated_at: startTime
+      });
+
+      await kirimNotifikasi(
+        data.user_id,
+        'Pembayaran Dikonfirmasi ✅',
+        `Pembayaran paket ${data.paket_nama} telah dikonfirmasi oleh Admin! Kuota internet Anda sudah aktif.`
+      );
+    }
 
     return true;
   } catch (err) {

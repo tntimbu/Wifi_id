@@ -144,6 +144,13 @@ export const MarketplaceView: React.FC<MarketplaceViewProps> = ({
                 <span className="text-slate-400">Total Harga:</span>
                 <span className="font-extrabold text-emerald-400">Rp {selectedPaket.harga.toLocaleString('id-ID')}</span>
               </div>
+              <div className="pt-2 border-t border-slate-800 text-[10px] text-slate-400">
+                {selectedMetode === 'saldo' ? (
+                  <span className="text-emerald-400 font-semibold">⚡ Paket langsung AKTIF seketika menggunakan saldo akun Anda.</span>
+                ) : (
+                  <span className="text-amber-400 font-semibold">⏳ Pembayaran non-saldo memerlukan verifikasi Admin sebelum kuota diaktifkan.</span>
+                )}
+              </div>
             </div>
 
             <div className="space-y-2">

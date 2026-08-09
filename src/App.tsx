@@ -31,6 +31,7 @@ import {
   exportTransaksiCSV,
   deleteUserAccount,
   deleteTransactionById,
+  submitTopUpRequest,
   subscribeToWifiConfig,
   subscribeToAllUsers,
   subscribeToAllTransactions,
@@ -623,11 +624,15 @@ export default function App() {
     }
   };
 
-  // Top Up Handler for Customer
-  const handleCustomerTopUp = async (amount: number) => {
+  // Top Up Handler for Customer (Requires Admin Verification)
+  const handleCustomerTopUp = async (amount: number, method: string, transferRef: string) => {
     if (!currentUser) return;
-    await updateUserBalance(currentUser.uid, amount);
-    addToast('success', `Saldo Rp ${amount.toLocaleString('id-ID')} berhasil masuk ke akun Anda!`);
+    const res = await submitTopUpRequest(currentUser, amount, method, transferRef);
+    if (res.success) {
+      addToast('info', 'Permintaan Top Up terkirim! Menunggu verifikasi Admin.');
+    } else {
+      addToast('error', res.message);
+    }
     await loadData();
   };
 

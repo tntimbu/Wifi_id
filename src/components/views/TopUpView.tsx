@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   Wallet, QrCode, Building2, Smartphone, Copy, Check, ArrowRight,
-  ShieldCheck, Info, CheckCircle2, Receipt
+  ShieldCheck, Info, CheckCircle2, Receipt, Clock
 } from 'lucide-react';
 import { UserProfile, KonfigurasiWifi } from '../../types';
 import { DEFAULT_PAYMENT_CONFIG } from '../../services/wifiService';
@@ -9,7 +9,7 @@ import { DEFAULT_PAYMENT_CONFIG } from '../../services/wifiService';
 interface TopUpViewProps {
   currentUser: UserProfile;
   wifiConfig: KonfigurasiWifi;
-  onTopUp: (amount: number) => Promise<void>;
+  onTopUp: (amount: number, method: string, transferRef: string) => Promise<void>;
 }
 
 export const TopUpView: React.FC<TopUpViewProps> = ({ currentUser, wifiConfig, onTopUp }) => {
@@ -41,7 +41,8 @@ export const TopUpView: React.FC<TopUpViewProps> = ({ currentUser, wifiConfig, o
     if (amount <= 0) return;
 
     setIsLoading(true);
-    await onTopUp(amount);
+    const subMethod = method === 'qris' ? 'qris' : method === 'va' ? `va_${selectedBank}` : `ewallet_${selectedEwallet}`;
+    await onTopUp(amount, subMethod, transferRef);
     setIsLoading(false);
 
     const generatedId = `TOPUP-${Math.floor(100000 + Math.random() * 900000)}`;
@@ -415,20 +416,16 @@ export const TopUpView: React.FC<TopUpViewProps> = ({ currentUser, wifiConfig, o
           <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 text-white space-y-6 shadow-2xl relative">
             
             <div className="text-center space-y-2">
-              <div className="w-16 h-16 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center mx-auto mb-2 shadow-lg shadow-emerald-500/10">
-                <CheckCircle2 className="w-10 h-10" />
+              <div className="w-16 h-16 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center justify-center mx-auto mb-2 shadow-lg shadow-amber-500/10">
+                <Clock className="w-10 h-10" />
               </div>
-              <h3 className="text-xl font-black text-white">Top Up Saldo Berhasil!</h3>
+              <h3 className="text-xl font-black text-white">Top Up Menunggu Verifikasi Admin</h3>
               <p className="text-xs text-slate-400">
-                Pembayaran Anda telah diterima dan saldo sebesar <strong className="text-emerald-400">Rp {amount.toLocaleString('id-ID')}</strong> telah ditambahkan ke akun Anda.
+                Bukti pembayaran Anda untuk Top Up sebesar <strong className="text-emerald-400">Rp {amount.toLocaleString('id-ID')}</strong> telah terkirim. Admin akan memeriksa uang masuk dan mengkonfirmasi saldo akun Anda segera.
               </p>
             </div>
 
             <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3 text-xs">
-              <div className="flex justify-between border-b border-slate-800/80 pb-2">
-                <span className="text-slate-400">ID Transaksi Top Up:</span>
-                <span className="font-mono font-bold text-blue-400">{lastTxId}</span>
-              </div>
               <div className="flex justify-between border-b border-slate-800/80 pb-2">
                 <span className="text-slate-400">Metode Pembayaran:</span>
                 <span className="font-bold text-white uppercase">{method === 'qris' ? 'QRIS' : method === 'va' ? `VA ${selectedBank}` : selectedEwallet}</span>
@@ -437,15 +434,19 @@ export const TopUpView: React.FC<TopUpViewProps> = ({ currentUser, wifiConfig, o
                 <span className="text-slate-400">Nominal Top Up:</span>
                 <span className="font-extrabold text-emerald-400">Rp {amount.toLocaleString('id-ID')}</span>
               </div>
+              <div className="flex justify-between border-b border-slate-800/80 pb-2">
+                <span className="text-slate-400">Catatan / Ref:</span>
+                <span className="font-mono text-slate-300">{transferRef || '-'}</span>
+              </div>
               <div className="flex justify-between">
-                <span className="text-slate-400">Total Saldo Sekarang:</span>
-                <span className="font-black text-white text-sm">Rp {currentUser.saldo.toLocaleString('id-ID')}</span>
+                <span className="text-slate-400">Status Pembayaran:</span>
+                <span className="font-bold text-amber-400 px-2 py-0.5 bg-amber-500/10 rounded-full border border-amber-500/20">MENUNGGU VERIFIKASI</span>
               </div>
             </div>
 
             <button
               onClick={() => setShowReceipt(false)}
-              className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-600/30 transition-all"
+              className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-600/30 transition-all"
             >
               Tutup & Kembali
             </button>

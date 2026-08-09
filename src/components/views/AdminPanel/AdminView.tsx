@@ -461,9 +461,13 @@ export const AdminView: React.FC<AdminViewProps> = ({
                     <td className="p-3 font-mono text-amber-300">{tx.kode_pembayaran || '-'}</td>
                     <td className="p-3">
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                        tx.status === 'aktif' ? 'bg-emerald-500/20 text-emerald-400' : tx.status === 'pending' ? 'bg-amber-500/20 text-amber-400' : 'bg-slate-800 text-slate-400'
+                        tx.status === 'aktif' || tx.status === 'sukses'
+                          ? 'bg-emerald-500/20 text-emerald-400'
+                          : tx.status === 'pending'
+                          ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                          : 'bg-slate-800 text-slate-400'
                       }`}>
-                        {tx.status}
+                        {tx.status === 'pending' ? 'PENDING' : tx.status.toUpperCase()}
                       </span>
                     </td>
                     <td className="p-3">
@@ -471,9 +475,11 @@ export const AdminView: React.FC<AdminViewProps> = ({
                         {tx.status === 'pending' && (
                           <button
                             onClick={() => onConfirmPayment(tx.id)}
-                            className="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold rounded-lg shadow"
+                            className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold rounded-lg shadow-md transition-all flex items-center gap-1"
+                            title="Verifikasi Pembayaran"
                           >
-                            Approve
+                            <CheckCircle2 className="w-3 h-3" />
+                            <span>{tx.paket_id === 'topup' ? 'Verifikasi Top Up' : 'Verifikasi & Aktifkan'}</span>
                           </button>
                         )}
                         <button
