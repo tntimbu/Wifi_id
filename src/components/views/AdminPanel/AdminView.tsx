@@ -571,6 +571,121 @@ export const AdminView: React.FC<AdminViewProps> = ({
                   </a>
                 </div>
               </div>
+
+              {/* Step-by-step Android Captive Portal App Guide */}
+              <div className="mt-3 pt-3 border-t border-slate-800/80">
+                <details className="group">
+                  <summary className="cursor-pointer text-xs font-bold text-blue-300 hover:text-blue-200 flex items-center justify-between py-1">
+                    <span className="flex items-center gap-1.5">
+                      📱 <strong>Panduan Setup Captive Portal Otomatis di HP Android (NetShare / EveryProxy / Wi-Fi Captive Server)</strong>
+                    </span>
+                    <span className="text-[10px] bg-blue-900/60 text-blue-300 px-2 py-0.5 rounded-full group-open:bg-blue-700 group-open:text-white transition-colors">
+                      Klik untuk Buka/Tutup Panduan
+                    </span>
+                  </summary>
+                  <div className="mt-2 p-3 rounded-lg bg-slate-950/80 border border-blue-900/50 text-xs text-slate-300 space-y-3 leading-relaxed">
+                    <div className="p-2 rounded bg-amber-950/40 border border-amber-800/50 text-amber-200 text-[11px]">
+                      <strong>Target Portal URL:</strong> <code className="text-amber-400 font-mono">https://tntimbu.github.io/Wifi_id/#page-landing</code>
+                    </div>
+
+                    <div className="space-y-2">
+                      <h5 className="font-bold text-white text-xs">Pilihan A: Menggunakan Aplikasi "NetShare - No Root Tethering" (Rekomendasi)</h5>
+                      <ol className="list-decimal list-inside space-y-1 text-slate-300 pl-1">
+                        <li>Buka <strong>Google Play Store</strong> di HP Android Anda, cari dan download <strong>NetShare</strong>.</li>
+                        <li>Nyalakan Hotspot HP Anda (SSID: <strong className="text-white">Eklepedia.id</strong>, Password: <strong className="text-amber-300">Eklesia_030918</strong>).</li>
+                        <li>Buka aplikasi NetShare, centang <strong>"Start Wi-Fi Hotspot"</strong>.</li>
+                        <li>Masuk ke menu <strong>Settings / Web Page Redirect</strong> di NetShare.</li>
+                        <li>Aktifkan fitur <strong>Redirect URL / Landing Page</strong> lalu paste link: <code className="text-amber-400 font-mono">https://tntimbu.github.io/Wifi_id/#page-landing</code></li>
+                        <li>Setiap perangkat HP/Laptop pembeli yang terhubung ke hotspot Anda akan otomatis pop-up membuka halaman portal landing Anda!</li>
+                      </ol>
+                    </div>
+
+                    <div className="space-y-2 border-t border-slate-800 pt-2">
+                      <h5 className="font-bold text-white text-xs">Pilihan B: Menggunakan Aplikasi "EveryProxy" + Redirect Proxy</h5>
+                      <ol className="list-decimal list-inside space-y-1 text-slate-300 pl-1">
+                        <li>Download <strong>EveryProxy</strong> gratis dari Google Play Store.</li>
+                        <li>Nyalakan Hotspot HP Android Anda seperti biasa.</li>
+                        <li>Buka EveryProxy, aktifkan toggle <strong>HTTP / HTTPS Proxy</strong>. Catat IP Host & Port (contoh: <code>192.168.43.1:8080</code>).</li>
+                        <li>Di pengaturan Captive Landing EveryProxy, masukkan URL Redirection: <code className="text-amber-400 font-mono">https://tntimbu.github.io/Wifi_id/#page-landing</code></li>
+                      </ol>
+                    </div>
+
+                    <div className="space-y-2 border-t border-blue-900/60 pt-3">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-extrabold border border-emerald-500/30">
+                          METODE PALING REKOMENDASI & STABIL (100% POP-UP OTOMATIS)
+                        </span>
+                      </div>
+                      <h5 className="font-bold text-emerald-300 text-xs">
+                        📡 METODE 3: Router Wi-Fi Murah (Rp 50rb - 100rb) + USB Tethering HP Smartfren
+                      </h5>
+                      <p className="text-[11px] text-slate-300">
+                        Satu-satunya cara agar HP pembeli <strong>langsung memunculkan pop-up login otomatis</strong> tanpa install aplikasi rumit di HP Anda adalah menyambungkan HP Smartfren ke Router Wi-Fi lewat Kabel Data (USB Tethering).
+                      </p>
+                      <ol className="list-decimal list-inside space-y-1.5 text-slate-200 pl-1">
+                        <li>
+                          <strong>Siapkan Router Bekas Murah:</strong> Gunakan router seperti TP-Link (TL-WR840N / TL-MR3020 / WR841N), Tenda, Totolink, atau Router Bekas Indihome/Biznet (Rp 50rb - 100rb di Tokopedia/Shopee/FB Marketplace).
+                        </li>
+                        <li>
+                          <strong>Sambungkan HP Smartfren ke Router:</strong> Pakai kabel data USB dari HP Smartfren Anda ke colokan USB Router.
+                        </li>
+                        <li>
+                          <strong>Aktifkan USB Tethering di HP:</strong> Buka Pengaturan HP ➔ Jaringan & Internet ➔ Hotspot & Tethering ➔ Aktifkan <strong>Penambatan USB (USB Tethering)</strong>. Router akan otomatis mendapat pasokan internet dari kuota Smartfren Anda.
+                        </li>
+                        <li>
+                          <strong>Atur SSID Wi-Fi Router:</strong> Masuk ke halaman admin router (biasanya <code>192.168.0.1</code> atau <code>192.168.1.1</code> di browser HP/Laptop), ubah nama Wi-Fi Router menjadi <strong className="text-white">Eklepedia.id</strong> dan Password: <strong className="text-amber-300">Eklesia_030918</strong> (atau tanpa password/Open Wifi).
+                        </li>
+                        <li className="space-y-2">
+                          <strong>Detail Cara Setting Redirect / Captive Portal di Berbagai Merk Router:</strong>
+                          <div className="p-3 rounded bg-slate-900 border border-slate-700 text-xs text-slate-200 space-y-2.5">
+                            <p className="text-amber-300 font-semibold">
+                              📌 Buka Browser di HP/Laptop ➔ Ketik Alamat IP Router (biasanya <code>192.168.0.1</code> / <code>192.168.1.1</code>) ➔ Login Admin (username: <code>admin</code>, pass: <code>admin</code>).
+                            </p>
+                            
+                            <div className="border-t border-slate-800 pt-2">
+                              <strong className="text-blue-300 block mb-1">1. TP-Link (Contoh: TL-WR840N / TL-WR841N / TL-MR3020):</strong>
+                              <p className="text-[11px] text-slate-300 pl-2">
+                                Buka menu <strong>Guest Network</strong> (Jaringan Tamu) ➔ Aktifkan <i>Guest Network</i> ➔ Di bagian <i>Guest Network Authentication</i>, pilih <strong>Web Portal</strong> atau <strong>Redirect URL</strong> ➔ Masukkan URL Portal: <code className="text-amber-400 font-mono">https://tntimbu.github.io/Wifi_id/#page-landing</code> ➔ Klik <strong>Save</strong>.
+                              </p>
+                            </div>
+
+                            <div className="border-t border-slate-800 pt-2">
+                              <strong className="text-blue-300 block mb-1">2. Tenda (Contoh: N301 / F3 / AC6):</strong>
+                              <p className="text-[11px] text-slate-300 pl-2">
+                                Buka menu <strong>Guest Network</strong> / <strong>Hotspot Host</strong> ➔ Aktifkan Guest Network ➔ Pada opsi <i>Landing Page / Portal Web</i> ➔ Masukkan URL Redirect: <code className="text-amber-400 font-mono">https://tntimbu.github.io/Wifi_id/#page-landing</code> ➔ Klik <strong>Save</strong>.
+                              </p>
+                            </div>
+
+                            <div className="border-t border-slate-800 pt-2">
+                              <strong className="text-blue-300 block mb-1">3. Totolink / Router Bekas Indihome (ZTE / Huawei):</strong>
+                              <p className="text-[11px] text-slate-300 pl-2">
+                                Buka menu <strong>Network / Wireless ➔ Guest Network</strong> ➔ Opsi <i>Captive Portal / Web Redirection</i> ➔ Tempel link portal: <code className="text-amber-400 font-mono">https://tntimbu.github.io/Wifi_id/#page-landing</code>.
+                              </p>
+                            </div>
+
+                            <div className="border-t border-slate-800 pt-2">
+                              <strong className="text-blue-300 block mb-1">4. Mikrotik / OpenWrt (Untuk Settingan Profesional):</strong>
+                              <p className="text-[11px] text-slate-300 pl-2">
+                                Buka Winbox ➔ Menu <strong>IP ➔ Hotspot ➔ Server Profiles</strong> ➔ Edit Profile ➔ Di tab <i>General / HTML Directory</i>, ubah <code>login.html</code> agar langsung me-redirect ke <code className="text-amber-400 font-mono">https://tntimbu.github.io/Wifi_id/#page-landing</code>.
+                              </p>
+                            </div>
+
+                            <div className="border-t border-slate-800 pt-2 bg-slate-950 p-2 rounded">
+                              <strong className="text-emerald-400 block mb-1">💡 Opsi Paling Sederhana Jika Router Rumah Biasa (Tanpa Fitur Captive Portal):</strong>
+                              <p className="text-[11px] text-slate-300">
+                                Anda tidak perlu bingung mencari menu Captive Portal jika router tidak mendukung. Cukup pasang <strong>Stiker / Print QR Code</strong> berisi link <code className="text-amber-400 font-mono">https://tntimbu.github.io/Wifi_id/#page-landing</code> di dekat router HP Anda. Ketika pembeli terhubung ke Wi-Fi <strong>Eklepedia.id</strong>, mereka tinggal scan QR Code atau buka link tersebut untuk beli kuota!
+                              </p>
+                            </div>
+                          </div>
+                        </li>
+                        <li>
+                          <strong>Selesai!</strong> Simpan pengaturan & Re-boot router jika diperlukan. Sekarang sistem penjualan Wi-Fi Eklepedia.id Anda siap digunakan secara otomatis!
+                        </li>
+                      </ol>
+                    </div>
+                  </div>
+                </details>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
