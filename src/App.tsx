@@ -658,7 +658,7 @@ export default function App() {
         )}
 
         {activePage === 'topup' && currentUser && (
-          <TopUpView currentUser={currentUser} onTopUp={handleCustomerTopUp} />
+          <TopUpView currentUser={currentUser} wifiConfig={wifiConfig} onTopUp={handleCustomerTopUp} />
         )}
       </main>
 

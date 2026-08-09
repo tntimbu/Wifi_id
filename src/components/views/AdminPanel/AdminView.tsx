@@ -52,9 +52,35 @@ export const AdminView: React.FC<AdminViewProps> = ({
   const [targetUser, setTargetUser] = useState<UserProfile | null>(null);
   const [balanceDelta, setBalanceDelta] = useState(20000);
 
-  // Wifi Config Form State
+  // Wifi & Payment Config Form State
   const [cfgNamaWifi, setCfgNamaWifi] = useState(wifiConfig.nama_wifi);
   const [cfgWelcome, setCfgWelcome] = useState(wifiConfig.welcome_message);
+  
+  const initialPayment = wifiConfig.pembayaran || {
+    qris_url: 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=00020101021126580014ID.LINKAJA.WWW011893600911002120015204581253033605802ID5910WiFi%20Kota5008JAKARTA6007050000062070703A0163041A2D',
+    qris_merchant_name: 'WIFI KOTA PREMIUM (QRIS ALL PAYMENT)',
+    qris_nmid: 'ID1020394817263',
+    va_accounts: [
+      { bank: 'BCA', account_number: '882091823712', account_name: 'WiFi Kota Premium', enabled: true },
+      { bank: 'Mandiri', account_number: '137001928374', account_name: 'WiFi Kota Premium', enabled: true },
+      { bank: 'BRI', account_number: '021001029384501', account_name: 'WiFi Kota Premium', enabled: true },
+      { bank: 'BNI', account_number: '0981238475', account_name: 'WiFi Kota Premium', enabled: true }
+    ],
+    ewallet_accounts: [
+      { provider: 'GoPay', phone_number: '081234567890', account_name: 'WiFi Kota Admin', enabled: true },
+      { provider: 'DANA', phone_number: '081234567890', account_name: 'WiFi Kota Admin', enabled: true },
+      { provider: 'ShopeePay', phone_number: '081234567890', account_name: 'WiFi Kota Admin', enabled: true },
+      { provider: 'OVO', phone_number: '081234567890', account_name: 'WiFi Kota Admin', enabled: true }
+    ],
+    instructions: 'Silakan transfer sesuai nominal ke salah satu rekening Bank / E-Wallet atau scan QRIS di atas. Saldo/paket akan langsung dikonfirmasi setelah pembayaran.'
+  };
+
+  const [qrisUrl, setQrisUrl] = useState(initialPayment.qris_url);
+  const [qrisMerchant, setQrisMerchant] = useState(initialPayment.qris_merchant_name);
+  const [qrisNmid, setQrisNmid] = useState(initialPayment.qris_nmid);
+  const [vaList, setVaList] = useState(initialPayment.va_accounts);
+  const [ewalletList, setEwalletList] = useState(initialPayment.ewallet_accounts);
+  const [payInstructions, setPayInstructions] = useState(initialPayment.instructions);
   const [cfgSaved, setCfgSaved] = useState(false);
 
   // Search/Filter Transaction State
@@ -127,7 +153,15 @@ export const AdminView: React.FC<AdminViewProps> = ({
     e.preventDefault();
     await onUpdateWifiConfig({
       nama_wifi: cfgNamaWifi,
-      welcome_message: cfgWelcome
+      welcome_message: cfgWelcome,
+      pembayaran: {
+        qris_url: qrisUrl,
+        qris_merchant_name: qrisMerchant,
+        qris_nmid: qrisNmid,
+        va_accounts: vaList,
+        ewallet_accounts: ewalletList,
+        instructions: payInstructions
+      }
     });
     setCfgSaved(true);
     setTimeout(() => setCfgSaved(false), 3000);
@@ -433,47 +467,231 @@ export const AdminView: React.FC<AdminViewProps> = ({
         </div>
       )}
 
-      {/* Tab 5: WiFi Configuration */}
+      {/* Tab 5: WiFi Configuration & Payment Channels */}
       {activeTab === 'konfigurasi' && (
-        <form onSubmit={handleSaveWifiConfig} className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4 max-w-xl">
-          <h3 className="text-base font-bold flex items-center gap-2">
-            <Wifi className="w-5 h-5 text-blue-400" /> Konfigurasi Captive Portal Hotspot
-          </h3>
-
+        <form onSubmit={handleSaveWifiConfig} className="space-y-6 max-w-4xl">
+          
+          {/* Header Alert */}
           {cfgSaved && (
-            <div className="p-3 rounded-xl bg-emerald-950/60 border border-emerald-800 text-emerald-300 text-xs font-semibold text-center">
-              Konfigurasi berhasil diperbarui!
+            <div className="p-4 rounded-xl bg-emerald-950/80 border border-emerald-800 text-emerald-300 text-xs font-semibold flex items-center justify-center gap-2">
+              <Check className="w-4 h-4 text-emerald-400" />
+              <span>Semua Pengaturan & Metode Pembayaran Berhasil Disimpan!</span>
             </div>
           )}
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">Nama WiFi (SSID Name)</label>
-            <input
-              type="text"
-              required
-              value={cfgNamaWifi}
-              onChange={(e) => setCfgNamaWifi(e.target.value)}
-              className="w-full px-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm font-bold text-white focus:outline-none focus:border-blue-500"
-            />
+          {/* Section 1: Hotspot Captive Portal */}
+          <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
+            <h3 className="text-base font-bold flex items-center gap-2 text-blue-400">
+              <Wifi className="w-5 h-5" /> Konfigurasi Hotspot & SSID Captive Portal
+            </h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Nama WiFi (SSID Name)</label>
+                <input
+                  type="text"
+                  required
+                  value={cfgNamaWifi}
+                  onChange={(e) => setCfgNamaWifi(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm font-bold text-white focus:outline-none focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Pesan Selamat Datang</label>
+                <textarea
+                  rows={2}
+                  required
+                  value={cfgWelcome}
+                  onChange={(e) => setCfgWelcome(e.target.value)}
+                  className="w-full px-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500"
+                />
+              </div>
+            </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">Pesan Selamat Datang (Welcome Message)</label>
+          {/* Section 2: QRIS Configuration */}
+          <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
+            <h3 className="text-base font-bold flex items-center gap-2 text-emerald-400">
+              <Wallet className="w-5 h-5" /> Pengaturan QRIS All Payment (Gopay, DANA, OVO, ShopeePay, Bank)
+            </h3>
+            <p className="text-xs text-slate-400">Atur rincian merchant QRIS yang akan ditampilkan pada halaman Top Up dan checkout customer.</p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Nama Merchant QRIS</label>
+                <input
+                  type="text"
+                  value={qrisMerchant}
+                  onChange={(e) => setQrisMerchant(e.target.value)}
+                  placeholder="Contoh: WIFI KOTA PREMIUM - QRIS"
+                  className="w-full px-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">NMID / ID Merchant</label>
+                <input
+                  type="text"
+                  value={qrisNmid}
+                  onChange={(e) => setQrisNmid(e.target.value)}
+                  placeholder="Contoh: ID1020394817263"
+                  className="w-full px-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1">URL Gambar QRIS (Barcode Image URL)</label>
+              <input
+                type="text"
+                value={qrisUrl}
+                onChange={(e) => setQrisUrl(e.target.value)}
+                placeholder="https://..."
+                className="w-full px-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500"
+              />
+              <p className="text-[10px] text-slate-500 mt-1">Gunakan link gambar QRIS resmi Anda atau buat QRis statis dari provider pembayaran Anda.</p>
+            </div>
+          </div>
+
+          {/* Section 3: Virtual Account (Bank Transfer) */}
+          <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
+            <h3 className="text-base font-bold flex items-center gap-2 text-indigo-400">
+              <Receipt className="w-5 h-5" /> Pengaturan Rekening Virtual Account (Bank Transfer)
+            </h3>
+            <p className="text-xs text-slate-400">Konfigurasi nomor rekening/VA untuk Bank BCA, Mandiri, BRI, BNI.</p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {vaList.map((va, idx) => (
+                <div key={va.bank} className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-indigo-300">Bank {va.bank}</span>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <span className="text-[10px] text-slate-400">{va.enabled ? 'Aktif' : 'Nonaktif'}</span>
+                      <input
+                        type="checkbox"
+                        checked={va.enabled}
+                        onChange={(e) => {
+                          const updated = [...vaList];
+                          updated[idx].enabled = e.target.checked;
+                          setVaList(updated);
+                        }}
+                        className="rounded border-slate-800 text-blue-600 focus:ring-0"
+                      />
+                    </label>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">Nomor Rekening / VA</label>
+                    <input
+                      type="text"
+                      value={va.account_number}
+                      onChange={(e) => {
+                        const updated = [...vaList];
+                        updated[idx].account_number = e.target.value;
+                        setVaList(updated);
+                      }}
+                      className="w-full px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs font-mono text-white focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">Nama Pemilik Rekening (a.n)</label>
+                    <input
+                      type="text"
+                      value={va.account_name}
+                      onChange={(e) => {
+                        const updated = [...vaList];
+                        updated[idx].account_name = e.target.value;
+                        setVaList(updated);
+                      }}
+                      className="w-full px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Section 4: E-Wallet Direct */}
+          <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
+            <h3 className="text-base font-bold flex items-center gap-2 text-cyan-400">
+              <Users className="w-5 h-5" /> Pengaturan Rekening E-Wallet (GoPay, DANA, ShopeePay, OVO)
+            </h3>
+            <p className="text-xs text-slate-400">Nomor HP / Akun E-Wallet untuk menerima transfer manual dari pelanggan.</p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {ewalletList.map((ew, idx) => (
+                <div key={ew.provider} className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-cyan-300">{ew.provider}</span>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <span className="text-[10px] text-slate-400">{ew.enabled ? 'Aktif' : 'Nonaktif'}</span>
+                      <input
+                        type="checkbox"
+                        checked={ew.enabled}
+                        onChange={(e) => {
+                          const updated = [...ewalletList];
+                          updated[idx].enabled = e.target.checked;
+                          setEwalletList(updated);
+                        }}
+                        className="rounded border-slate-800 text-cyan-600 focus:ring-0"
+                      />
+                    </label>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">Nomor HP {ew.provider}</label>
+                    <input
+                      type="text"
+                      value={ew.phone_number}
+                      onChange={(e) => {
+                        const updated = [...ewalletList];
+                        updated[idx].phone_number = e.target.value;
+                        setEwalletList(updated);
+                      }}
+                      className="w-full px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs font-mono text-white focus:outline-none focus:border-cyan-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">Nama Akun (a.n)</label>
+                    <input
+                      type="text"
+                      value={ew.account_name}
+                      onChange={(e) => {
+                        const updated = [...ewalletList];
+                        updated[idx].account_name = e.target.value;
+                        setEwalletList(updated);
+                      }}
+                      className="w-full px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-cyan-500"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Section 5: Instructions */}
+          <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+            <label className="block text-xs font-bold text-slate-300">Instruksi Catatan Pembayaran Bagi Pelanggan</label>
             <textarea
               rows={3}
-              required
-              value={cfgWelcome}
-              onChange={(e) => setCfgWelcome(e.target.value)}
+              value={payInstructions}
+              onChange={(e) => setPayInstructions(e.target.value)}
               className="w-full px-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500"
             />
           </div>
 
+          {/* Submit Button */}
           <button
             type="submit"
-            className="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl shadow-md transition-all"
+            className="w-full py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-amber-500/20 transition-all flex items-center justify-center gap-2"
           >
-            Simpan Perubahan Settings WiFi
+            <ShieldCheck className="w-4 h-4" />
+            Simpan Semua Pengaturan Konfigurasi & Pembayaran
           </button>
+
         </form>
       )}
 

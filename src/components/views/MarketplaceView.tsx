@@ -180,8 +180,26 @@ export const MarketplaceView: React.FC<MarketplaceViewProps> = ({
                       onChange={() => setSelectedMetode('qris')}
                     />
                     <div>
-                      <span className="block text-xs font-bold">QRIS / E-Wallet (Simulasi)</span>
-                      <span className="text-[10px] text-slate-400">Verifikasi otomatis oleh Admin</span>
+                      <span className="block text-xs font-bold">QRIS All Payment</span>
+                      <span className="text-[10px] text-slate-400">Scan QRIS dari GoPay, DANA, OVO, ShopeePay, atau m-Banking</span>
+                    </div>
+                  </div>
+                </label>
+
+                <label className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${
+                  selectedMetode === 'transfer' ? 'bg-blue-600/10 border-blue-500 text-white' : 'bg-slate-950/40 border-slate-800 text-slate-400'
+                }`}>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="radio"
+                      name="m_p"
+                      value="transfer"
+                      checked={selectedMetode === 'transfer'}
+                      onChange={() => setSelectedMetode('transfer')}
+                    />
+                    <div>
+                      <span className="block text-xs font-bold">Transfer Virtual Account / Bank</span>
+                      <span className="text-[10px] text-slate-400">Transfer ke BCA, Mandiri, BRI, atau BNI</span>
                     </div>
                   </div>
                 </label>

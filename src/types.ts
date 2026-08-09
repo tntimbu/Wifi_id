@@ -63,11 +63,35 @@ export interface NotifikasiItem {
   created_at: string;
 }
 
+export interface VaAccountConfig {
+  bank: string;
+  account_number: string;
+  account_name: string;
+  enabled: boolean;
+}
+
+export interface EwalletAccountConfig {
+  provider: string;
+  phone_number: string;
+  account_name: string;
+  enabled: boolean;
+}
+
+export interface PaymentConfig {
+  qris_url: string;
+  qris_merchant_name: string;
+  qris_nmid: string;
+  va_accounts: VaAccountConfig[];
+  ewallet_accounts: EwalletAccountConfig[];
+  instructions: string;
+}
+
 export interface KonfigurasiWifi {
   id: string;
   nama_wifi: string;
   welcome_message: string;
   logo_url: string;
+  pembayaran?: PaymentConfig;
   updated_at?: string;
 }
 

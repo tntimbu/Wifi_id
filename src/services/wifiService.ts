@@ -24,6 +24,7 @@ import {
   PemakaianLog,
   NotifikasiItem,
   KonfigurasiWifi,
+  PaymentConfig,
   RealtimeUsageState,
   MetodePembayaran,
   StatusTransaksi
@@ -302,20 +303,53 @@ export async function getAllUsers(): Promise<UserProfile[]> {
   }
 }
 
+export const DEFAULT_PAYMENT_CONFIG: PaymentConfig = {
+  qris_url: 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=00020101021126580014ID.LINKAJA.WWW011893600911002120015204581253033605802ID5910WiFi%20Kota5008JAKARTA6007050000062070703A0163041A2D',
+  qris_merchant_name: 'WIFI KOTA PREMIUM (QRIS ALL PAYMENT)',
+  qris_nmid: 'ID1020394817263',
+  va_accounts: [
+    { bank: 'BCA', account_number: '882091823712', account_name: 'WiFi Kota Premium', enabled: true },
+    { bank: 'Mandiri', account_number: '137001928374', account_name: 'WiFi Kota Premium', enabled: true },
+    { bank: 'BRI', account_number: '021001029384501', account_name: 'WiFi Kota Premium', enabled: true },
+    { bank: 'BNI', account_number: '0981238475', account_name: 'WiFi Kota Premium', enabled: true }
+  ],
+  ewallet_accounts: [
+    { provider: 'GoPay', phone_number: '081234567890', account_name: 'WiFi Kota Admin', enabled: true },
+    { provider: 'DANA', phone_number: '081234567890', account_name: 'WiFi Kota Admin', enabled: true },
+    { provider: 'ShopeePay', phone_number: '081234567890', account_name: 'WiFi Kota Admin', enabled: true },
+    { provider: 'OVO', phone_number: '081234567890', account_name: 'WiFi Kota Admin', enabled: true }
+  ],
+  instructions: 'Silakan lakukan pembayaran sesuai nominal ke salah satu rekening Bank / E-Wallet atau scan QRIS di atas. Saldo/paket akan langsung dikonfirmasi setelah pembayaran.'
+};
+
 /**
  * WiFi Configuration Services
  */
 export async function getWifiConfig(): Promise<KonfigurasiWifi> {
-  const configRef = doc(db, 'konfigurasi_wifi', WIFI_CONFIG_ID);
-  const snap = await getDoc(configRef);
-  if (snap.exists()) {
-    return snap.data() as KonfigurasiWifi;
+  try {
+    const configRef = doc(db, 'konfigurasi_wifi', WIFI_CONFIG_ID);
+    const snap = await getDoc(configRef);
+    if (snap.exists()) {
+      const data = snap.data() as KonfigurasiWifi;
+      return {
+        ...data,
+        pembayaran: data.pembayaran ? {
+          ...DEFAULT_PAYMENT_CONFIG,
+          ...data.pembayaran,
+          va_accounts: data.pembayaran.va_accounts && data.pembayaran.va_accounts.length > 0 ? data.pembayaran.va_accounts : DEFAULT_PAYMENT_CONFIG.va_accounts,
+          ewallet_accounts: data.pembayaran.ewallet_accounts && data.pembayaran.ewallet_accounts.length > 0 ? data.pembayaran.ewallet_accounts : DEFAULT_PAYMENT_CONFIG.ewallet_accounts
+        } : DEFAULT_PAYMENT_CONFIG
+      };
+    }
+  } catch (err) {
+    console.warn('Note getting wifi config:', err);
   }
   return {
     id: WIFI_CONFIG_ID,
     nama_wifi: 'Wifi-Kuota Premium',
     welcome_message: 'Selamat datang di Wifi-Kuota Premium! Nikmati internet cepat dan stabil.',
-    logo_url: ''
+    logo_url: '',
+    pembayaran: DEFAULT_PAYMENT_CONFIG
   };
 }
 
